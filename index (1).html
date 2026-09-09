@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>나의 시작 페이지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --bg-deep: #050505;
+    --thread: rgba(255, 255, 255, 0.16);
+    --thread-soft: rgba(255, 255, 255, 0.08);
+    --white: #f3f3f3;
+    --white-dim: #9a9a9a;
+    --card: #121212;
+    --card-edge: #262626;
+    --card-edge-hover: #3d3d3d;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; margin: 0; }
+
+  body {
+    font-family: 'Manrope', system-ui, sans-serif;
+    color: var(--white);
+    background: radial-gradient(120% 90% at 12% -10%, #141414 0%, var(--bg) 45%, var(--bg-deep) 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 20px 40px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ---- 배경 거미줄 ---- */
+  .web-corner {
+    position: fixed;
+    top: -6%;
+    left: -6%;
+    width: min(60vw, 640px);
+    height: min(60vw, 640px);
+    pointer-events: none;
+    opacity: 0.55;
+    z-index: 0;
+  }
+
+  .web-corner.br {
+    top: auto;
+    left: auto;
+    bottom: -10%;
+    right: -10%;
+    opacity: 0.3;
+    width: min(46vw, 480px);
+    height: min(46vw, 480px);
+    transform: rotate(180deg);
+  }
+
+  .hanging-spider {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 26px;
+    z-index: 2;
+    pointer-events: none;
+    animation: sway 6s ease-in-out infinite;
+    transform-origin: top center;
+  }
+
+  .hanging-spider .thread {
+    stroke: var(--thread);
+    stroke-width: 1;
+  }
+
+  @keyframes sway {
+    0%, 100% { transform: translateX(-50%) rotate(-3deg); }
+    50% { transform: translateX(-50%) rotate(3deg); }
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+  }
+
+  /* ---- Clock / date ---- */
+  .clock-block { text-align: center; }
+
+  .date-line {
+    font-size: 0.92rem;
+    letter-spacing: 0.03em;
+    color: var(--white-dim);
+    margin-bottom: 8px;
+  }
+
+  .time-line {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(3.2rem, 13vw, 5.6rem);
+    line-height: 1;
+    color: var(--white);
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 26px rgba(255, 255, 255, 0.12);
+  }
+
+  .time-line .seconds {
+    font-size: 0.38em;
+    color: var(--white-dim);
+    margin-left: 8px;
+    font-style: normal;
+  }
+
+  /* ---- Search ---- */
+  form.search {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 999px;
+    padding: 14px 20px;
+    transition: border-color 0.2s ease;
+  }
+
+  form.search:focus-within { border-color: var(--card-edge-hover); }
+
+  form.search svg { flex-shrink: 0; color: var(--white-dim); }
+
+  form.search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-family: 'Manrope', sans-serif;
+    font-size: 1rem;
+    background: transparent;
+    color: var(--white);
+  }
+
+  form.search input::placeholder { color: #6b6b6b; }
+
+  form.search button {
+    border: 1px solid var(--card-edge);
+    background: transparent;
+    color: var(--white);
+    font-family: 'Manrope', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 9px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  form.search button:hover {
+    background: #fff;
+    color: #0a0a0a;
+    border-color: #fff;
+  }
+
+  /* ---- Todo ---- */
+  section.todo {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 20px;
+    padding: 26px 26px 20px;
+  }
+
+  .todo-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .todo-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.5rem;
+    color: var(--white);
+    margin: 0;
+  }
+
+  .todo-count { font-size: 0.85rem; color: var(--white-dim); }
+
+  form.add-todo { display: flex; gap: 8px; margin-bottom: 14px; }
+
+  form.add-todo input {
+    flex: 1;
+    border: 1px solid var(--card-edge);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: 'Manrope', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    color: var(--white);
+    background: #0e0e0e;
+  }
+
+  form.add-todo input:focus { border-color: var(--card-edge-hover); }
+
+  form.add-todo button {
+    border: 1px solid var(--card-edge);
+    background: transparent;
+    color: var(--white);
+    font-weight: 700;
+    font-size: 1.1rem;
+    width: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  form.add-todo button:hover { background: #fff; color: #0a0a0a; }
+
+  ul.todo-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  ul.todo-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 4px;
+    border-bottom: 1px solid #1f1f1f;
+  }
+
+  ul.todo-list li:last-child { border-bottom: none; }
+
+  ul.todo-list .check {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 1.6px solid var(--card-edge-hover);
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  ul.todo-list li.done .check { background: #fff; border-color: #fff; }
+
+  ul.todo-list .check svg { opacity: 0; width: 12px; height: 12px; color: #0a0a0a; }
+
+  ul.todo-list li.done .check svg { opacity: 1; }
+
+  ul.todo-list .label { flex: 1; font-size: 0.95rem; color: var(--white); }
+
+  ul.todo-list li.done .label { color: #5a5a5a; text-decoration: line-through; }
+
+  ul.todo-list .remove {
+    border: none;
+    background: transparent;
+    color: #4a4a4a;
+    font-size: 1.1rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease, color 0.15s ease;
+  }
+
+  ul.todo-list li:hover .remove { opacity: 1; }
+  ul.todo-list .remove:hover { color: #d9d9d9; }
+
+  .empty-note {
+    font-size: 0.88rem;
+    color: #5a5a5a;
+    text-align: center;
+    padding: 14px 0 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="web-corner" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="rgba(255,255,255,0.9)" stroke-width="0.7" fill="none">
+    <line x1="0" y1="0" x2="400" y2="70"></line>
+    <line x1="0" y1="0" x2="400" y2="180"></line>
+    <line x1="0" y1="0" x2="400" y2="290"></line>
+    <line x1="0" y1="0" x2="400" y2="400"></line>
+    <line x1="0" y1="0" x2="290" y2="400"></line>
+    <line x1="0" y1="0" x2="180" y2="400"></line>
+    <line x1="0" y1="0" x2="70" y2="400"></line>
+    <path d="M 30 4 Q 60 40 30 78"></path>
+    <path d="M 62 4 Q 120 78 62 158"></path>
+    <path d="M 100 4 Q 190 120 100 240"></path>
+    <path d="M 150 4 Q 270 170 150 330"></path>
+    <path d="M 210 4 Q 340 220 210 400"></path>
+    <path d="M 4 30 Q 40 60 78 30"></path>
+    <path d="M 4 62 Q 78 120 158 62"></path>
+    <path d="M 4 100 Q 120 190 240 100"></path>
+    <path d="M 4 150 Q 170 270 330 150"></path>
+    <path d="M 4 210 Q 220 340 400 210"></path>
+  </g>
+</svg>
+
+<svg class="web-corner br" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="rgba(255,255,255,0.9)" stroke-width="0.7" fill="none">
+    <line x1="0" y1="0" x2="400" y2="90"></line>
+    <line x1="0" y1="0" x2="400" y2="220"></line>
+    <line x1="0" y1="0" x2="400" y2="400"></line>
+    <line x1="0" y1="0" x2="220" y2="400"></line>
+    <line x1="0" y1="0" x2="90" y2="400"></line>
+    <path d="M 40 4 Q 80 50 40 100"></path>
+    <path d="M 90 4 Q 190 140 90 280"></path>
+    <path d="M 160 4 Q 300 200 160 400"></path>
+    <path d="M 4 40 Q 50 80 100 40"></path>
+    <path d="M 4 90 Q 140 190 280 90"></path>
+    <path d="M 4 160 Q 200 300 400 160"></path>
+  </g>
+</svg>
+
+<svg class="hanging-spider" viewBox="0 0 60 220" xmlns="http://www.w3.org/2000/svg">
+  <line class="thread" x1="30" y1="0" x2="30" y2="120"></line>
+  <g transform="translate(30,150)" fill="#f3f3f3">
+    <ellipse cx="0" cy="6" rx="10" ry="13"></ellipse>
+    <circle cx="0" cy="-10" r="7"></circle>
+    <g stroke="#f3f3f3" stroke-width="2" fill="none" stroke-linecap="round">
+      <path d="M -9 -2 Q -26 -8 -34 -20"></path>
+      <path d="M -9 4 Q -28 4 -36 -4"></path>
+      <path d="M -9 10 Q -26 16 -32 28"></path>
+      <path d="M -9 15 Q -22 26 -24 40"></path>
+      <path d="M 9 -2 Q 26 -8 34 -20"></path>
+      <path d="M 9 4 Q 28 4 36 -4"></path>
+      <path d="M 9 10 Q 26 16 32 28"></path>
+      <path d="M 9 15 Q 22 26 24 40"></path>
+    </g>
+  </g>
+</svg>
+
+<main>
+  <div class="clock-block">
+    <div class="date-line" id="date-line"></div>
+    <div class="time-line" id="time-line">--:--<span class="seconds">--</span></div>
+  </div>
+
+  <form class="search" action="https://www.google.com/search" method="GET" target="_blank">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="7"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input type="text" name="q" placeholder="Google 검색" autocomplete="off" autofocus>
+    <button type="submit">검색</button>
+  </form>
+
+  <section class="todo">
+    <div class="todo-header">
+      <h2>오늘의 할 일</h2>
+      <span class="todo-count" id="todo-count"></span>
+    </div>
+    <form class="add-todo" id="add-todo-form">
+      <input type="text" id="todo-input" placeholder="할 일을 입력하세요" autocomplete="off">
+      <button type="submit" aria-label="추가">+</button>
+    </form>
+    <ul class="todo-list" id="todo-list"></ul>
+    <div class="empty-note" id="empty-note" style="display:none;">오늘 할 일을 추가해 보세요.</div>
+  </section>
+</main>
+
+<script>
+  // ---- 날짜 / 시간 ----
+  const dateLine = document.getElementById('date-line');
+  const timeLine = document.getElementById('time-line');
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function updateClock() {
+    const now = new Date();
+    dateLine.textContent = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 ${weekdays[now.getDay()]}요일`;
+    timeLine.innerHTML = `${pad(now.getHours())}:${pad(now.getMinutes())}<span class="seconds">${pad(now.getSeconds())}</span>`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ---- 오늘의 할 일 ----
+  const STORAGE_KEY = 'my-start-page-todos';
+  const list = document.getElementById('todo-list');
+  const input = document.getElementById('todo-input');
+  const form = document.getElementById('add-todo-form');
+  const countEl = document.getElementById('todo-count');
+  const emptyNote = document.getElementById('empty-note');
+
+  function loadTodos() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveTodos(todos) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+    } catch (e) { /* 저장 실패 시 무시 */ }
+  }
+
+  let todos = loadTodos();
+
+  function render() {
+    list.innerHTML = '';
+    todos.forEach((todo, i) => {
+      const li = document.createElement('li');
+      if (todo.done) li.classList.add('done');
+
+      const check = document.createElement('div');
+      check.className = 'check';
+      check.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      check.addEventListener('click', () => {
+        todos[i].done = !todos[i].done;
+        saveTodos(todos);
+        render();
+      });
+
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = todo.text;
+
+      const remove = document.createElement('button');
+      remove.className = 'remove';
+      remove.type = 'button';
+      remove.setAttribute('aria-label', '삭제');
+      remove.textContent = '×';
+      remove.addEventListener('click', () => {
+        todos.splice(i, 1);
+        saveTodos(todos);
+        render();
+      });
+
+      li.appendChild(check);
+      li.appendChild(label);
+      li.appendChild(remove);
+      list.appendChild(li);
+    });
+
+    const doneCount = todos.filter(t => t.done).length;
+    countEl.textContent = todos.length ? `${doneCount} / ${todos.length} 완료` : '';
+    emptyNote.style.display = todos.length ? 'none' : 'block';
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    todos.push({ text, done: false });
+    saveTodos(todos);
+    input.value = '';
+    render();
+  });
+
+  render();
+</script>
+
+</body>
+</html>
