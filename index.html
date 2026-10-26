@@ -294,37 +294,41 @@
       <!-- TODO: 주요 활동 내용 입력 예정 -->
       <p>주요 활동 소개가 들어갈 자리입니다.</p>
     </section>
+<!-- [SECTION: section-projects] 개별 프로젝트 (링크로 연결) -->
+<section id="section-projects">
+  <h2>프로젝트</h2>
+  <div class="project-list">
 
-    <!-- [SECTION: section-projects] 개별 프로젝트 (링크로 연결) -->
-    <section id="section-projects">
-      <h2>프로젝트</h2>
-      <div class="project-list">
-
-        <!-- [ITEM: project-todo] 오늘의 할 일 관리 -->
-        <article class="project-item" id="project-todo">
-          <h3>오늘의 할 일 관리</h3>
-          <p>하루의 할 일을 추가·관리하는 웹 앱입니다.</p>
-          <a href="todo.html">결과물 보기</a>
-        </article>
-
-        <article class="project-item" id="project-stamp">
-          <h3>디지털도장복사</h3>
-          <p>서류에 활용하는 디지털 직인 제작.</p>
-          <a href="code_artifact.html">결과물 보기</a>
-        </article>
-        
-        <!-- 새 프로젝트는 위 article 블록을 복사해 추가 -->
-
+    <!-- [ITEM: project-todo] 오늘의 할 일 관리 -->
+    <article class="project-item" id="project-todo">
+      <h3>오늘의 할 일 관리</h3>
+      <p>하루의 할 일을 추가·관리하는 웹 앱입니다.</p>
+      <div class="project-link-box">
+        <a href="todo.html" class="btn-link" target="_blank" rel="noopener noreferrer">오늘의 할 일 리스트 보기 &rarr;</a>
       </div>
-    </section>
+    </article>
 
-  </main>
+    <!-- [ITEM: project-stamp] 디지털 도장 복사 -->
+    <article class="project-item" id="project-stamp">
+      <h3>디지털 도장 복사</h3>
+      <p>서류에 활용하는 디지털 직인을 제작하고 관리하는 툴입니다.</p>
+      <div class="project-link-box">
+        <a href="code_artifact.html" class="btn-link" target="_blank" rel="noopener noreferrer">스탬프 제작기 보기 &rarr;</a>
+      </div>
+    </article>
+    
+    <!-- 새 프로젝트는 위 article 블록을 복사해 추가 -->
 
-  <!-- ========== [SECTION: footer-credit] 제작 정보 ========== -->
-  <footer id="footer-credit">
-    <p>제작: 허다경 | 공주대학교 25학번</p>
-    <p><small>&copy; 2026 허다경. All rights reserved.</small></p>
-  </footer>
+  </div>
+</section>
+
+</main>
+
+<!-- ========== [SECTION: footer-credit] 제작 정보 ========== -->
+<footer id="footer-credit">
+  <p>제작: 허다경 | 공주대학교 25학번</p>
+  <p><small>&copy; 2026 허다경. All rights reserved.</small></p>
+</footer>
 
 </body>
 </html>
