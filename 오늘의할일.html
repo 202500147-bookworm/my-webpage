@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오늘의 할 일</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #1f2430;
+    --muted: #7a8194;
+    --line: #e5e8f0;
+    --primary: #4f6cf5;
+    --primary-soft: #e9edff;
+    --study: #4f6cf5;
+    --study-soft: #e9edff;
+    --life: #16a37f;
+    --life-soft: #e0f6ef;
+    --danger: #e5484d;
+    --shadow: 0 2px 10px rgba(30, 40, 90, 0.07);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161d;
+      --card: #1e212b;
+      --text: #eceef5;
+      --muted: #9097ab;
+      --line: #2e3240;
+      --primary: #7b90ff;
+      --primary-soft: #28305a;
+      --study: #7b90ff;
+      --study-soft: #28305a;
+      --life: #3cc9a2;
+      --life-soft: #1b3b33;
+      --danger: #ff6b70;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+    line-height: 1.5;
+  }
+  .app { max-width: 640px; margin: 0 auto; padding: 24px 16px 60px; }
+  header h1 { margin: 0; font-size: 28px; letter-spacing: -0.5px; }
+  .sub { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+  .badge-today {
+    display: inline-block; margin-left: 6px; padding: 1px 8px;
+    border-radius: 999px; background: var(--primary); color: #fff; font-size: 12px; vertical-align: 2px;
+  }
+
+  button { font-family: inherit; cursor: pointer; }
+  .datebar { display: flex; gap: 8px; margin: 20px 0 10px; align-items: center; }
+  .datebar input[type="date"] {
+    flex: 1; min-width: 0; padding: 9px 12px; font: inherit;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--text);
+  }
+  .icon-btn {
+    width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--card); color: var(--text); font-size: 20px; line-height: 1;
+  }
+  .icon-btn:hover { background: var(--primary-soft); }
+  .today-btn {
+    height: 40px; padding: 0 14px; border-radius: 10px; border: none;
+    background: var(--primary); color: #fff; font-weight: 600;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--card); color: var(--muted); font-size: 13px;
+  }
+  .chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .date-chips { margin-bottom: 18px; min-height: 4px; }
+  .date-chips .label { font-size: 12px; color: var(--muted); align-self: center; margin-right: 2px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat {
+    background: var(--card); border-radius: 14px; padding: 14px 10px; text-align: center; box-shadow: var(--shadow);
+  }
+  .stat .num { font-size: 28px; font-weight: 700; }
+  .stat .lbl { font-size: 13px; color: var(--muted); }
+  .stat.remain .num { color: var(--primary); }
+  .stat.done .num { color: var(--life); }
+
+  .progress-wrap { margin: 12px 0 20px; }
+  .progress-top { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .bar { height: 10px; background: var(--line); border-radius: 999px; overflow: hidden; }
+  .bar > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--primary), var(--life)); transition: width .3s; }
+
+  .add-form {
+    display: flex; flex-wrap: wrap; gap: 8px; background: var(--card);
+    padding: 12px; border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 18px;
+  }
+  .add-form input[type="text"] {
+    flex: 1 1 200px; min-width: 0; padding: 11px 12px; font: inherit;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--text);
+  }
+  .add-form select, .edit-row select {
+    padding: 10px; font: inherit; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--bg); color: var(--text);
+  }
+  .add-btn {
+    padding: 0 18px; min-height: 42px; border: none; border-radius: 10px;
+    background: var(--primary); color: #fff; font-weight: 600; font-size: 15px;
+  }
+  input:focus, select:focus, button:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+  .filters { margin-bottom: 14px; }
+
+  section.list-section { margin-bottom: 22px; }
+  .list-section h2 { font-size: 16px; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+  .count {
+    font-size: 12px; background: var(--primary-soft); color: var(--primary);
+    padding: 1px 9px; border-radius: 999px; font-weight: 600;
+  }
+  ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  li.item {
+    display: flex; align-items: center; gap: 10px; background: var(--card);
+    padding: 11px 12px; border-radius: 12px; box-shadow: var(--shadow);
+  }
+  li.item input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--life); flex: none; cursor: pointer; }
+  .item .text { flex: 1; min-width: 0; word-break: break-word; }
+  li.done .text { text-decoration: line-through; color: var(--muted); }
+  .tag { flex: none; font-size: 12px; padding: 2px 9px; border-radius: 999px; font-weight: 600; }
+  .tag.study { background: var(--study-soft); color: var(--study); }
+  .tag.life { background: var(--life-soft); color: var(--life); }
+  .actions { display: flex; gap: 2px; flex: none; }
+  .act {
+    border: none; background: transparent; color: var(--muted);
+    padding: 6px 8px; border-radius: 8px; font-size: 13px;
+  }
+  .act:hover { background: var(--primary-soft); color: var(--primary); }
+  .act.del:hover { background: rgba(229, 72, 77, .12); color: var(--danger); }
+  .edit-row { display: flex; flex: 1; gap: 6px; flex-wrap: wrap; }
+  .edit-row input[type="text"] {
+    flex: 1 1 140px; min-width: 0; padding: 8px 10px; font: inherit;
+    border: 1px solid var(--primary); border-radius: 8px; background: var(--bg); color: var(--text);
+  }
+  .empty { text-align: center; color: var(--muted); font-size: 14px; padding: 18px; background: var(--card); border-radius: 12px; border: 1px dashed var(--line); }
+
+  @media (max-width: 420px) {
+    li.item { flex-wrap: wrap; }
+    .actions { margin-left: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>📝 오늘의 할 일</h1>
+    <p class="sub" id="dateLabel"></p>
+  </header>
+
+  <div class="datebar">
+    <button class="icon-btn" id="prevDay" aria-label="전날">‹</button>
+    <input type="date" id="datePick" aria-label="날짜 선택">
+    <button class="icon-btn" id="nextDay" aria-label="다음날">›</button>
+    <button class="today-btn" id="todayBtn">오늘</button>
+  </div>
+  <div class="chips date-chips" id="dateChips"></div>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="statTotal">0</div><div class="lbl">전체</div></div>
+    <div class="stat done"><div class="num" id="statDone">0</div><div class="lbl">완료</div></div>
+    <div class="stat remain"><div class="num" id="statRemain">0</div><div class="lbl">남은 일</div></div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-top"><span>진행률</span><span id="pct">0%</span></div>
+    <div class="bar"><div id="barFill"></div></div>
+  </div>
+
+  <form class="add-form" id="addForm">
+    <input type="text" id="newText" placeholder="할 일을 입력하세요" maxlength="100" autocomplete="off">
+    <select id="newCat" aria-label="카테고리">
+      <option value="study">📚 학업</option>
+      <option value="life">🏠 일상</option>
+    </select>
+    <button type="submit" class="add-btn">추가</button>
+  </form>
+
+  <div class="chips filters" id="catFilters">
+    <button class="chip active" data-cat="all">전체</button>
+    <button class="chip" data-cat="study">📚 학업</button>
+    <button class="chip" data-cat="life">🏠 일상</button>
+  </div>
+
+  <section class="list-section">
+    <h2>진행 중 <span class="count" id="activeCount">0</span></h2>
+    <ul id="activeList"></ul>
+  </section>
+
+  <section class="list-section">
+    <h2>완료 <span class="count" id="doneCount">0</span></h2>
+    <ul id="doneList"></ul>
+  </section>
+</div>
+
+<script>
+(function () {
+  var KEY = 'todayTodo.v1';
+  var CATS = { study: '📚 학업', life: '🏠 일상' };
+  var DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+  var todos = load();
+  var curDate = ymd(new Date());
+  var catFilter = 'all';
+  var editingId = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
+  }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(todos)); } catch (e) {}
+  }
+  function ymd(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function parseDate(s) {
+    var p = s.split('-').map(Number);
+    return new Date(p[0], p[1] - 1, p[2]);
+  }
+  function shiftDay(n) {
+    var d = parseDate(curDate);
+    d.setDate(d.getDate() + n);
+    curDate = ymd(d);
+    editingId = null;
+    render();
+  }
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function renderDateLabel() {
+    var d = parseDate(curDate);
+    var label = d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 (' + DAYS[d.getDay()] + ')';
+    var el = $('dateLabel');
+    el.textContent = label;
+    if (curDate === ymd(new Date())) {
+      var b = document.createElement('span');
+      b.className = 'badge-today';
+      b.textContent = '오늘';
+      el.appendChild(b);
+    }
+    $('datePick').value = curDate;
+  }
+
+  function renderDateChips() {
+    var box = $('dateChips');
+    box.textContent = '';
+    var map = {};
+    todos.forEach(function (t) {
+      if (!map[t.date]) map[t.date] = { total: 0, left: 0 };
+      map[t.date].total++;
+      if (!t.done) map[t.date].left++;
+    });
+    var dates = Object.keys(map).sort().reverse().slice(0, 7);
+    if (!dates.length) return;
+    var lab = document.createElement('span');
+    lab.className = 'label';
+    lab.textContent = '기록된 날짜';
+    box.appendChild(lab);
+    dates.forEach(function (ds) {
+      var d = parseDate(ds);
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip' + (ds === curDate ? ' active' : '');
+      b.textContent = (d.getMonth() + 1) + '/' + d.getDate() + ' (' + map[ds].total + ')';
+      b.title = '남은 일 ' + map[ds].left + '개';
+      b.addEventListener('click', function () { curDate = ds; editingId = null; render(); });
+      box.appendChild(b);
+    });
+  }
+
+  function renderStats(dayTodos) {
+    var total = dayTodos.length;
+    var done = dayTodos.filter(function (t) { return t.done; }).length;
+    var pct = total ? Math.round(done / total * 100) : 0;
+    $('statTotal').textContent = total;
+    $('statDone').textContent = done;
+    $('statRemain').textContent = total - done;
+    $('pct').textContent = pct + '%';
+    $('barFill').style.width = pct + '%';
+  }
+
+  function buildItem(t) {
+    var li = document.createElement('li');
+    li.className = 'item' + (t.done ? ' done' : '');
+
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = t.done;
+    cb.setAttribute('aria-label', '완료 체크');
+    cb.addEventListener('change', function () {
+      t.done = cb.checked;
+      save();
+      render();
+    });
+    li.appendChild(cb);
+
+    if (editingId === t.id) {
+      var row = document.createElement('div');
+      row.className = 'edit-row';
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.value = t.text;
+      inp.maxLength = 100;
+      var sel = document.createElement('select');
+      Object.keys(CATS).forEach(function (k) {
+        var o = document.createElement('option');
+        o.value = k;
+        o.textContent = CATS[k];
+        if (k === t.cat) o.selected = true;
+        sel.appendChild(o);
+      });
+      var commit = function () {
+        var v = inp.value.trim();
+        if (!v) { inp.focus(); return; }
+        t.text = v;
+        t.cat = sel.value;
+        editingId = null;
+        save();
+        render();
+      };
+      var cancel = function () { editingId = null; render(); };
+      inp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); commit(); }
+        else if (e.key === 'Escape') cancel();
+      });
+      var ok = document.createElement('button');
+      ok.type = 'button'; ok.className = 'act'; ok.textContent = '저장';
+      ok.addEventListener('click', commit);
+      var no = document.createElement('button');
+      no.type = 'button'; no.className = 'act'; no.textContent = '취소';
+      no.addEventListener('click', cancel);
+      row.appendChild(inp); row.appendChild(sel); row.appendChild(ok); row.appendChild(no);
+      li.appendChild(row);
+      setTimeout(function () { inp.focus(); inp.select(); }, 0);
+      return li;
+    }
+
+    var span = document.createElement('span');
+    span.className = 'text';
+    span.textContent = t.text;
+    li.appendChild(span);
+
+    var tag = document.createElement('span');
+    tag.className = 'tag ' + t.cat;
+    tag.textContent = CATS[t.cat] || t.cat;
+    li.appendChild(tag);
+
+    var act = document.createElement('div');
+    act.className = 'actions';
+    var edit = document.createElement('button');
+    edit.type = 'button'; edit.className = 'act'; edit.textContent = '수정';
+    edit.addEventListener('click', function () { editingId = t.id; render(); });
+    var del = document.createElement('button');
+    del.type = 'button'; del.className = 'act del'; del.textContent = '삭제';
+    del.addEventListener('click', function () {
+      todos = todos.filter(function (x) { return x.id !== t.id; });
+      save();
+      render();
+    });
+    act.appendChild(edit); act.appendChild(del);
+    li.appendChild(act);
+    return li;
+  }
+
+  function fillList(ul, items, emptyMsg) {
+    ul.textContent = '';
+    if (!items.length) {
+      var li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = emptyMsg;
+      ul.appendChild(li);
+      return;
+    }
+    items.forEach(function (t) { ul.appendChild(buildItem(t)); });
+  }
+
+  function render() {
+    renderDateLabel();
+    renderDateChips();
+
+    var dayTodos = todos.filter(function (t) { return t.date === curDate; });
+    renderStats(dayTodos);
+
+    var shown = dayTodos.filter(function (t) { return catFilter === 'all' || t.cat === catFilter; });
+    var active = shown.filter(function (t) { return !t.done; });
+    var done = shown.filter(function (t) { return t.done; });
+    $('activeCount').textContent = active.length;
+    $('doneCount').textContent = done.length;
+
+    var emptyActive = dayTodos.length && !active.length && catFilter === 'all'
+      ? '모든 할 일을 끝냈어요! 🎉'
+      : '진행 중인 할 일이 없어요.';
+    fillList($('activeList'), active, emptyActive);
+    fillList($('doneList'), done, '완료한 할 일이 아직 없어요.');
+
+    var btns = $('catFilters').querySelectorAll('.chip');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('active', btns[i].getAttribute('data-cat') === catFilter);
+    }
+  }
+
+  // 이벤트 연결
+  $('addForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = $('newText').value.trim();
+    if (!v) { $('newText').focus(); return; }
+    todos.push({ id: uid(), text: v, cat: $('newCat').value, done: false, date: curDate });
+    save();
+    $('newText').value = '';
+    $('newText').focus();
+    render();
+  });
+  $('prevDay').addEventListener('click', function () { shiftDay(-1); });
+  $('nextDay').addEventListener('click', function () { shiftDay(1); });
+  $('todayBtn').addEventListener('click', function () {
+    curDate = ymd(new Date());
+    editingId = null;
+    render();
+  });
+  $('datePick').addEventListener('change', function (e) {
+    if (e.target.value) { curDate = e.target.value; editingId = null; render(); }
+  });
+  $('catFilters').addEventListener('click', function (e) {
+    var b = e.target.closest('.chip');
+    if (!b) return;
+    catFilter = b.getAttribute('data-cat');
+    render();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
