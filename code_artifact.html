@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디지털 도장 생성기 - 공문서/학급서류용 투명 PNG 인장</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts import for Diverse Copyright-Free Korean Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Batang&family=Black+Han+Sans&family=East+Sea+Dokdo&family=Gowun+Batang:wght@400;700&family=Gugi&family=Nanum+Gothic:wght@400;700;800&family=Nanum+Myeongjo:wght@400;700;800&family=Nanum+Pen+Script&family=Noto+Serif+KR:wght@400;700;900&family=Sunflower:wght@500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Nanum Gothic', system-ui, -apple-system, sans-serif;
+        }
+        /* Transparent Checkerboard background pattern */
+        .bg-checkerboard {
+            background-color: #f8fafc;
+            background-image: 
+                linear-gradient(45deg, #cbd5e1 25%, transparent 25%), 
+                linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #cbd5e1 75%), 
+                linear-gradient(-45deg, transparent 75%, #cbd5e1 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+        /* Custom scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Range input styling */
+        input[type=range] {
+            accent-color: #dc2626;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-red-200">
+                    印
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight">디지털 도장 생성기</h1>
+                    <p class="text-xs text-slate-500 hidden sm:block">공문서, 학급 서류, 디지털 평가표용 투명 배경 인장</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <i class="fa-solid fa-check-circle mr-1.5"></i> 저작권 Free 폰트 적용
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Toast Notification for Alerts -->
+    <div id="toast" class="fixed top-20 right-5 z-50 transform translate-x-full transition-transform duration-300 ease-in-out bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 border border-slate-700 pointer-events-none">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <span id="toastMessage" class="text-xs sm:text-sm font-medium">메시지</span>
+    </div>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Settings Panel (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+            
+            <!-- Quick Style Presets -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center">
+                    <i class="fa-solid fa-wand-magic-sparkles text-red-500 mr-2"></i> 빠른 추천 도장 스타일
+                </h2>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button onclick="applyPreset('personal_round')" class="p-3 border border-slate-200 hover:border-red-500 rounded-xl bg-slate-50 hover:bg-red-50/50 text-xs font-semibold text-slate-700 transition flex flex-col items-center justify-center space-y-1.5">
+                        <i class="fa-regular fa-circle text-xl text-red-600"></i>
+                        <span>개인인 (원형)</span>
+                    </button>
+                    <button onclick="applyPreset('personal_square')" class="p-3 border border-slate-200 hover:border-red-500 rounded-xl bg-slate-50 hover:bg-red-50/50 text-xs font-semibold text-slate-700 transition flex flex-col items-center justify-center space-y-1.5">
+                        <i class="fa-regular fa-square text-xl text-red-600"></i>
+                        <span>성명인 (정사각형)</span>
+                    </button>
+                    <button onclick="applyPreset('official_square')" class="p-3 border border-slate-200 hover:border-red-500 rounded-xl bg-slate-50 hover:bg-red-50/50 text-xs font-semibold text-slate-700 transition flex flex-col items-center justify-center space-y-1.5">
+                        <i class="fa-solid fa-square text-xl text-red-600"></i>
+                        <span>직인/기관인</span>
+                    </button>
+                    <button onclick="applyPreset('oval_sign')" class="p-3 border border-slate-200 hover:border-red-500 rounded-xl bg-slate-50 hover:bg-red-50/50 text-xs font-semibold text-slate-700 transition flex flex-col items-center justify-center space-y-1.5">
+                        <i class="fa-solid fa-egg text-xl text-red-600"></i>
+                        <span>타원 결재인</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Customization Form Sections -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="border-b border-slate-200 bg-slate-50/50 px-5 py-3.5">
+                    <h2 class="font-bold text-slate-800 text-sm flex items-center">
+                        <i class="fa-solid fa-sliders text-red-600 mr-2"></i> 도장 세부 설정
+                    </h2>
+                </div>
+
+                <div class="p-5 space-y-6">
+                    
+                    <!-- Section 1: Text & Font Settings -->
+                    <div class="space-y-4">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">1. 이름 및 글씨체</h3>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4">
+                            <!-- Name Input -->
+                            <div class="sm:col-span-7">
+                                <label for="nameInput" class="block text-xs font-semibold text-slate-600 mb-1">도장 문구/이름</label>
+                                <input type="text" id="nameInput" value="홍길동" maxlength="8" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm font-bold text-slate-800" placeholder="이름 입력 (예: 홍길동)">
+                            </div>
+
+                            <!-- Auto '인(印)' Checkbox -->
+                            <div class="sm:col-span-5 flex items-end">
+                                <label class="cursor-pointer inline-flex items-center select-none bg-slate-100 hover:bg-slate-200/80 px-3.5 py-2.5 rounded-xl border border-slate-200 w-full transition">
+                                    <input type="checkbox" id="autoInToggle" checked class="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500">
+                                    <span class="ml-2.5 text-xs font-semibold text-slate-700">뒤에 '인(印)' 자동 추가</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Font Dropdown -->
+                        <div>
+                            <label for="fontSelect" class="block text-xs font-semibold text-slate-600 mb-1">한글 글씨체 선택 (상업적 무료)</label>
+                            <select id="fontSelect" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-sm font-medium bg-white">
+                                <option value="'Nanum Myeongjo', serif" selected>나눔명조 (Nanum Myeongjo) - 정갈하고 선명함</option>
+                                <option value="'Batang', serif">궁서/바탕체 (Batang) - 고전적인 서명인</option>
+                                <option value="'Gowun Batang', serif">고운바탕 (Gowun Batang) - 단아하고 격식있음</option>
+                                <option value="'Nanum Gothic', sans-serif">나눔고딕 (Nanum Gothic) - 현대적이고 깔끔함</option>
+                                <option value="'Black Han Sans', sans-serif">블랙한산 (Black Han Sans) - 두껍고 확실한 직인용</option>
+                                <option value="'East Sea Dokdo', cursive">독도체 (East Sea Dokdo) - 멋스러운 붓글씨/서체</option>
+                                <option value="'Nanum Pen Script', cursive">나눔손글씨 펜 (Nanum Pen) - 자연스러운 손서명</option>
+                                <option value="'Gugi', cursive">구기체 (Gugi) - 독특하고 감각적인 인장</option>
+                                <option value="'Sunflower', sans-serif">선플라워 (Sunflower) - 또렷하고 친근함</option>
+                            </select>
+                        </div>
+
+                        <!-- Text Layout Selection -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">글자 배열 방식</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <label class="cursor-pointer text-center">
+                                    <input type="radio" name="textLayout" value="grid" checked class="peer hidden">
+                                    <div class="py-2.5 px-2 border border-slate-200 rounded-xl text-xs font-semibold peer-checked:border-red-500 peer-checked:bg-red-50/80 peer-checked:text-red-700 hover:bg-slate-50 transition">
+                                        <i class="fa-solid fa-table-cells-large block text-base mb-1"></i>
+                                        2x2 격자 (전통배열)
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer text-center">
+                                    <input type="radio" name="textLayout" value="vertical" class="peer hidden">
+                                    <div class="py-2.5 px-2 border border-slate-200 rounded-xl text-xs font-semibold peer-checked:border-red-500 peer-checked:bg-red-50/80 peer-checked:text-red-700 hover:bg-slate-50 transition">
+                                        <i class="fa-solid fa-arrows-up-down block text-base mb-1"></i>
+                                        세로 1줄
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer text-center">
+                                    <input type="radio" name="textLayout" value="horizontal" class="peer hidden">
+                                    <div class="py-2.5 px-2 border border-slate-200 rounded-xl text-xs font-semibold peer-checked:border-red-500 peer-checked:bg-red-50/80 peer-checked:text-red-700 hover:bg-slate-50 transition">
+                                        <i class="fa-solid fa-arrows-left-right block text-base mb-1"></i>
+                                        가로 1줄
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <!-- Section 2: Shape & Border -->
+                    <div class="space-y-4">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">2. 외곽선 모양 및 두께</h3>
+                        
+                        <!-- Shape Picker -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <label class="cursor-pointer text-center">
+                                <input type="radio" name="shape" value="circle" checked class="peer hidden">
+                                <div class="py-2.5 border border-slate-200 rounded-xl text-xs font-semibold peer-checked:border-red-500 peer-checked:bg-red-50/80 peer-checked:text-red-700 hover:bg-slate-50 transition">
+                                    원형 (Circle)
+                                </div>
+                            </label>
+                            <label class="cursor-pointer text-center">
+                                <input type="radio" name="shape" value="square" class="peer hidden">
+                                <div class="py-2.5 border border-slate-200 rounded-xl text-xs font-semibold peer-checked:border-red-500 peer-checked:bg-red-50/80 peer-checked:text-red-700 hover:bg-slate-50 transition">
+                                    정사각형
+                                </div>
+                            </label>
+                            <label class="cursor-pointer text-center">
+                                <input type="radio" name="shape" value="rounded_square" class="peer hidden">
+                                <div class="py-2.5 border border-slate-200 rounded-xl text-xs font-semibold peer-checked:border-red-500 peer-checked:bg-red-50/80 peer-checked:text-red-700 hover:bg-slate-50 transition">
+                                    둥근 사각형
+                                </div>
+                            </label>
+                            <label class="cursor-pointer text-center">
+                                <input type="radio" name="shape" value="oval_v" class="peer hidden">
+                                <div class="py-2.5 border border-slate-200 rounded-xl text-xs font-semibold peer-checked:border-red-500 peer-checked:bg-red-50/80 peer-checked:text-red-700 hover:bg-slate-50 transition">
+                                    타원형 (세로)
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Border Thickness & Double Border -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-600 mb-1">
+                                    <span>외곽선 두께</span>
+                                    <span id="borderWidthVal" class="text-red-600 font-bold">12px</span>
+                                </div>
+                                <input type="range" id="borderWidth" min="0" max="25" value="12" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+                            </div>
+
+                            <div>
+                                <label for="borderStyle" class="block text-xs font-semibold text-slate-600 mb-1">테두리 스타일</label>
+                                <select id="borderStyle" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium bg-white">
+                                    <option value="single">단일 테두리</option>
+                                    <option value="double">이중 테두리 (외곽+내곽선)</option>
+                                    <option value="none">테두리 없음</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-100">
+
+                    <!-- Section 3: Colors & Texture Effect -->
+                    <div class="space-y-4">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">3. 색상 및 전통 인주 질감 효과</h3>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Color Selection -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">도장 인주 색상</label>
+                                <div class="flex items-center space-x-2">
+                                    <input type="color" id="sealColor" value="#dc2626" class="w-10 h-10 border-0 rounded-xl cursor-pointer p-0 bg-transparent">
+                                    <div class="flex space-x-1.5">
+                                        <button onclick="setColor('#dc2626')" class="w-7 h-7 rounded-full bg-[#dc2626] border-2 border-white shadow-sm ring-1 ring-slate-200" title="기본 선명한 RED"></button>
+                                        <button onclick="setColor('#991b1b')" class="w-7 h-7 rounded-full bg-[#991b1b] border-2 border-white shadow-sm ring-1 ring-slate-200" title="전통 다크 인주 RED"></button>
+                                        <button onclick="setColor('#ea580c')" class="w-7 h-7 rounded-full bg-[#ea580c] border-2 border-white shadow-sm ring-1 ring-slate-200" title="주황빛 인주 RED"></button>
+                                        <button onclick="setColor('#18181b')" class="w-7 h-7 rounded-full bg-[#18181b] border-2 border-white shadow-sm ring-1 ring-slate-200" title="검은색"></button>
+                                        <button onclick="setColor('#1d4ed8')" class="w-7 h-7 rounded-full bg-[#1d4ed8] border-2 border-white shadow-sm ring-1 ring-slate-200" title="청색"></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Real Stamp Effect Toggle -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1.5">인주 질감 효과 (스탬프 느낌)</label>
+                                <label class="cursor-pointer inline-flex items-center bg-slate-100 hover:bg-slate-200/80 px-3.5 py-2.5 rounded-xl border border-slate-200 w-full transition">
+                                    <input type="checkbox" id="stampEffectToggle" checked class="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500">
+                                    <span class="ml-2.5 text-xs font-semibold text-slate-700">전통 인주 질감/마모 효과</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Fine Adjustment Sliders -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-600 mb-1">
+                                    <span>글자 크기 조절</span>
+                                    <span id="fontSizeVal" class="text-slate-800 font-bold">0</span>
+                                </div>
+                                <input type="range" id="fontSizeOffset" min="-25" max="25" value="0" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold text-slate-600 mb-1">
+                                    <span>글자 간격 / 자간</span>
+                                    <span id="letterSpacingVal" class="text-slate-800 font-bold">0</span>
+                                </div>
+                                <input type="range" id="letterSpacing" min="-15" max="25" value="0" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Canvas Preview & Download Panel (5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+            
+            <!-- Preview Box -->
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm sticky top-20">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="font-bold text-slate-800 text-sm flex items-center">
+                        <i class="fa-regular fa-image text-red-600 mr-2"></i> 도장 실시간 미리보기
+                    </h2>
+                    <span class="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">배경 투명 PNG</span>
+                </div>
+
+                <!-- Canvas Render Container -->
+                <div class="bg-checkerboard rounded-2xl p-6 flex items-center justify-center border border-slate-200 shadow-inner min-h-[280px] relative">
+                    <canvas id="sealCanvas" width="360" height="360" class="max-w-full h-auto drop-shadow-md transition-transform duration-200"></canvas>
+                </div>
+
+                <!-- Real Document Preview Toggle & Mock Container -->
+                <div class="mt-4">
+                    <button onclick="toggleDocPreview()" class="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition flex items-center justify-between">
+                        <span><i class="fa-solid fa-file-contract mr-1.5 text-slate-500"></i> 서류 적용 예시 미리보기</span>
+                        <i id="docPreviewIcon" class="fa-solid fa-chevron-down text-slate-400"></i>
+                    </button>
+                    
+                    <div id="docPreviewBox" class="hidden mt-3 p-4 bg-amber-50/50 border border-amber-200/80 rounded-xl relative overflow-hidden">
+                        <div class="text-[11px] text-amber-900 leading-relaxed font-serif space-y-1">
+                            <p class="font-bold text-xs text-amber-950 border-b border-amber-200/60 pb-1 mb-1">위임장 / 승인서 (예시)</p>
+                            <p>상기 본인은 위 직무에 대한 권한을 디지털 도장을 통해 최종 정식 승인함.</p>
+                            <div class="mt-3 flex justify-between items-center text-xs font-bold text-slate-800">
+                                <span>성명 : 홍 길 동</span>
+                                <div class="relative w-12 h-12 flex items-center justify-center">
+                                    <span class="text-slate-400 font-normal text-[10px]">(서명/인)</span>
+                                    <img id="mockStampImage" class="absolute inset-0 w-full h-full object-contain pointer-events-none" alt="도장 미리보기">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guidance message -->
+                <div class="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start space-x-2.5 text-xs text-slate-600">
+                    <i class="fa-solid fa-lightbulb text-amber-500 text-sm mt-0.5"></i>
+                    <p class="leading-relaxed">클립보드 복사 후 한글(HWP), MS 워드, 엑셀 문서에 <strong>Ctrl+V</strong>로 즉시 도장을 넣을 수 있습니다.</p>
+                </div>
+
+                <!-- Export Action Buttons -->
+                <div class="mt-5 space-y-2.5">
+                    <button onclick="copyToClipboard()" class="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2">
+                        <i class="fa-regular fa-copy text-base"></i>
+                        <span>클립보드에 이미지 복사 (Ctrl+V)</span>
+                    </button>
+                    
+                    <button onclick="downloadPNG()" class="w-full py-3.5 px-4 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-download text-base"></i>
+                        <span>투명 PNG 다운로드</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-400">
+            <p>디지털 도장 생성기 &copy; 2026 | 교사 및 사무 직원을 위해 제작됨 | 저장되는 모든 이미지는 브라우저 내부에서만 처리됩니다.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // DOM Elements
+        const canvas = document.getElementById('sealCanvas');
+        const ctx = canvas.getContext('2d');
+        const nameInput = document.getElementById('nameInput');
+        const autoInToggle = document.getElementById('autoInToggle');
+        const fontSelect = document.getElementById('fontSelect');
+        const sealColorInput = document.getElementById('sealColor');
+        const borderWidthInput = document.getElementById('borderWidth');
+        const borderWidthVal = document.getElementById('borderWidthVal');
+        const borderStyleSelect = document.getElementById('borderStyle');
+        const stampEffectToggle = document.getElementById('stampEffectToggle');
+        const fontSizeOffsetInput = document.getElementById('fontSizeOffset');
+        const fontSizeVal = document.getElementById('fontSizeVal');
+        const letterSpacingInput = document.getElementById('letterSpacing');
+        const letterSpacingVal = document.getElementById('letterSpacingVal');
+        const mockStampImage = document.getElementById('mockStampImage');
+
+        // Event Listeners for real-time rendering
+        [nameInput, autoInToggle, fontSelect, sealColorInput, borderWidthInput, borderStyleSelect, stampEffectToggle, fontSizeOffsetInput, letterSpacingInput].forEach(elem => {
+            elem.addEventListener('input', updateAndRender);
+            elem.addEventListener('change', updateAndRender);
+        });
+
+        document.querySelectorAll('input[name="shape"]').forEach(radio => {
+            radio.addEventListener('change', updateAndRender);
+        });
+
+        document.querySelectorAll('input[name="textLayout"]').forEach(radio => {
+            radio.addEventListener('change', updateAndRender);
+        });
+
+        // Initialize Web Font Load Check & Render
+        document.fonts.ready.then(() => {
+            renderSeal();
+        });
+
+        // Update Slider value displays & redraw canvas
+        function updateAndRender() {
+            borderWidthVal.textContent = borderWidthInput.value + 'px';
+            fontSizeVal.textContent = (fontSizeOffsetInput.value > 0 ? '+' : '') + fontSizeOffsetInput.value;
+            letterSpacingVal.textContent = (letterSpacingInput.value > 0 ? '+' : '') + letterSpacingInput.value;
+            renderSeal();
+        }
+
+        // Color Palette Shortcut
+        function setColor(colorHex) {
+            sealColorInput.value = colorHex;
+            renderSeal();
+        }
+
+        // Quick Preset Configurations
+        function applyPreset(presetType) {
+            if (presetType === 'personal_round') {
+                setRadioValue('shape', 'circle');
+                setRadioValue('textLayout', 'grid');
+                fontSelect.value = "'Nanum Myeongjo', serif";
+                borderWidthInput.value = 12;
+                borderStyleSelect.value = 'single';
+                stampEffectToggle.checked = true;
+            } else if (presetType === 'personal_square') {
+                setRadioValue('shape', 'square');
+                setRadioValue('textLayout', 'grid');
+                fontSelect.value = "'Batang', serif";
+                borderWidthInput.value = 14;
+                borderStyleSelect.value = 'single';
+                stampEffectToggle.checked = true;
+            } else if (presetType === 'official_square') {
+                setRadioValue('shape', 'square');
+                setRadioValue('textLayout', 'grid');
+                fontSelect.value = "'Black Han Sans', sans-serif";
+                borderWidthInput.value = 18;
+                borderStyleSelect.value = 'double';
+                stampEffectToggle.checked = false;
+            } else if (presetType === 'oval_sign') {
+                setRadioValue('shape', 'oval_v');
+                setRadioValue('textLayout', 'vertical');
+                fontSelect.value = "'Gowun Batang', serif";
+                borderWidthInput.value = 10;
+                borderStyleSelect.value = 'single';
+                stampEffectToggle.checked = true;
+            }
+            updateAndRender();
+            showToast('프리셋 스타일이 적용되었습니다.', 'success');
+        }
+
+        function setRadioValue(name, value) {
+            const radios = document.querySelectorAll(`input[name="${name}"]`);
+            radios.forEach(r => {
+                r.checked = (r.value === value);
+            });
+        }
+
+        // Main Seal Render Engine
+        function renderSeal() {
+            // Canvas Reset
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            let rawText = nameInput.value.trim();
+            if (!rawText) rawText = "홍길동";
+
+            // Process '인(印)' suffix
+            if (autoInToggle.checked && !rawText.endsWith("인")) {
+                rawText += "인";
+            }
+
+            const shape = document.querySelector('input[name="shape"]:checked').value;
+            const layout = document.querySelector('input[name="textLayout"]:checked').value;
+            const color = sealColorInput.value;
+            const bWidth = parseInt(borderWidthInput.value, 10);
+            const bStyle = borderStyleSelect.value;
+            const fontStyle = fontSelect.value;
+            const sizeOffset = parseInt(fontSizeOffsetInput.value, 10);
+            const lSpacing = parseInt(letterSpacingInput.value, 10);
+            const enableTexture = stampEffectToggle.checked;
+
+            ctx.save();
+
+            // 1. Draw Seal Outer Border
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = bWidth;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            const size = 300; // Base seal bounding size
+            const halfSize = size / 2;
+
+            if (bStyle !== 'none' && bWidth > 0) {
+                drawBorderShape(ctx, shape, centerX, centerY, halfSize, bWidth);
+                ctx.stroke();
+
+                // Draw Double Border inner stroke if selected
+                if (bStyle === 'double') {
+                    const innerMargin = bWidth + 6;
+                    ctx.save();
+                    ctx.lineWidth = Math.max(2, Math.floor(bWidth / 2.5));
+                    drawBorderShape(ctx, shape, centerX, centerY, halfSize - innerMargin, ctx.lineWidth);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            // 2. Draw Characters based on Selected Layout
+            drawSealText(ctx, rawText, layout, shape, fontStyle, color, sizeOffset, lSpacing, centerX, centerY, halfSize - bWidth - 10);
+
+            // 3. Apply Vintage Ink / Rubber Stamp Texture Effect (Noise Mask)
+            if (enableTexture) {
+                applyStampTexture(ctx, width, height, color);
+            }
+
+            ctx.restore();
+
+            // Sync with document mock preview
+            if (mockStampImage) {
+                mockStampImage.src = canvas.toDataURL('image/png');
+            }
+        }
+
+        // Helper: Draw Border Shape Paths
+        function drawBorderShape(context, shape, cx, cy, radius, strokeW) {
+            context.beginPath();
+            const r = radius - (strokeW / 2);
+
+            if (shape === 'circle') {
+                context.arc(cx, cy, r, 0, Math.PI * 2);
+            } else if (shape === 'square') {
+                context.rect(cx - r, cy - r, r * 2, r * 2);
+            } else if (shape === 'rounded_square') {
+                const cornerRadius = 35;
+                context.roundRect(cx - r, cy - r, r * 2, r * 2, cornerRadius);
+            } else if (shape === 'oval_v') {
+                context.ellipse(cx, cy, r * 0.72, r * 1.1, 0, 0, Math.PI * 2);
+            }
+        }
+
+        // Helper: Format and Draw Text Characters
+        function drawSealText(context, text, layout, shape, font, color, sizeOffset, letterSpacing, cx, cy, maxRadius) {
+            context.fillStyle = color;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+
+            const chars = text.split('');
+            const charCount = chars.length;
+
+            // 2x2 Grid Layout (Traditional Korean Stamp arrangement)
+            if (layout === 'grid') {
+                let gridChars = [...chars];
+                // Pad to 4 characters for grid if needed
+                if (gridChars.length === 3) {
+                    // For 3 Korean characters, traditional stamps order top-right to bottom-left or top-left
+                }
+
+                // Grid base calculation
+                const baseFontSize = Math.floor(maxRadius * 0.75) + sizeOffset;
+                context.font = `bold ${baseFontSize}px ${font}`;
+
+                const offset = maxRadius * 0.42 + (letterSpacing * 0.5);
+
+                if (gridChars.length === 4) {
+                    // Traditional 2x2 Reading order: Top-Right -> Bottom-Right -> Top-Left -> Bottom-Left or Standard Quadrants
+                    // Korean Stamp convention: 1:TopRight, 2:BottomRight, 3:TopLeft, 4:BottomLeft
+                    context.fillText(gridChars[0], cx + offset, cy - offset);
+                    context.fillText(gridChars[1], cx + offset, cy + offset);
+                    context.fillText(gridChars[2], cx - offset, cy - offset);
+                    context.fillText(gridChars[3], cx - offset, cy + offset);
+                } else if (gridChars.length === 3) {
+                    // 3 chars arrangement in 2x2
+                    context.fillText(gridChars[0], cx + offset, cy - offset);
+                    context.fillText(gridChars[1], cx + offset, cy + offset);
+                    context.fillText(gridChars[2], cx - offset, cy);
+                } else if (gridChars.length === 2) {
+                    // 2 chars split
+                    context.fillText(gridChars[0], cx, cy - offset);
+                    context.fillText(gridChars[1], cx, cy + offset);
+                } else {
+                    drawLinearText(context, gridChars, 'vertical', font, sizeOffset, letterSpacing, cx, cy, maxRadius);
+                }
+            } else {
+                drawLinearText(context, chars, layout, font, sizeOffset, letterSpacing, cx, cy, maxRadius);
+            }
+        }
+
+        // Helper: Vertical / Horizontal Linear Text
+        function drawLinearText(context, chars, layout, font, sizeOffset, letterSpacing, cx, cy, maxRadius) {
+            const count = chars.length;
+            if (count === 0) return;
+
+            if (layout === 'vertical') {
+                const baseFontSize = Math.min(Math.floor((maxRadius * 2) / (count * 1.1)), 110) + sizeOffset;
+                context.font = `bold ${baseFontSize}px ${font}`;
+                const totalHeight = (count * baseFontSize) + ((count - 1) * letterSpacing);
+                let startY = cy - (totalHeight / 2) + (baseFontSize / 2);
+
+                chars.forEach((char, idx) => {
+                    context.fillText(char, cx, startY + idx * (baseFontSize + letterSpacing));
+                });
+            } else {
+                // Horizontal
+                const baseFontSize = Math.min(Math.floor((maxRadius * 2) / (count * 1.1)), 110) + sizeOffset;
+                context.font = `bold ${baseFontSize}px ${font}`;
+                const totalWidth = (count * baseFontSize) + ((count - 1) * letterSpacing);
+                let startX = cx - (totalWidth / 2) + (baseFontSize / 2);
+
+                chars.forEach((char, idx) => {
+                    context.fillText(char, startX + idx * (baseFontSize + letterSpacing), cy);
+                });
+            }
+        }
+
+        // Helper: Realistic Rubber Stamp / Ink Texture Mask
+        function applyStampTexture(context, width, height, color) {
+            const imgData = context.getImageData(0, 0, width, height);
+            const data = imgData.data;
+
+            // Seeded-like noise iteration over pixels where drawing exists
+            for (let i = 0; i < data.length; i += 4) {
+                const alpha = data[i + 3];
+                if (alpha > 30) {
+                    // Random noise mask for ink wear/erosion
+                    const rand = Math.random();
+                    if (rand < 0.12) {
+                        // Create small worn holes
+                        data[i + 3] = Math.floor(alpha * (Math.random() * 0.3));
+                    } else if (rand < 0.25) {
+                        // Lighten ink density unevenly
+                        data[i + 3] = Math.floor(alpha * (0.6 + Math.random() * 0.4));
+                    }
+                }
+            }
+            context.putImageData(imgData, 0, 0);
+        }
+
+        // Action: Copy PNG directly to Clipboard
+        async function copyToClipboard() {
+            try {
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        showToast('클립보드 복사에 실패했습니다.', 'error');
+                        return;
+                    }
+                    try {
+                        const data = [new ClipboardItem({ 'image/png': blob })];
+                        await navigator.clipboard.write(data);
+                        showToast('도장 이미지가 클립보드에 복사되었습니다! (Ctrl+V로 붙여넣기)', 'success');
+                    } catch (err) {
+                        // Fallback handling
+                        showToast('브라우저 보안 정책상 이미지 직접 복사가 제한됩니다. 다운로드 버튼을 이용해주세요.', 'error');
+                    }
+                }, 'image/png');
+            } catch (e) {
+                showToast('클립보드 복사를 지원하지 않는 브라우저 환경입니다.', 'error');
+            }
+        }
+
+        // Action: Download Transparent PNG
+        function downloadPNG() {
+            let name = nameInput.value.trim() || '도장';
+            const link = document.createElement('a');
+            link.download = `${name}_디지털도장.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast(`${name}_디지털도장.png 다운로드가 시작되었습니다.`, 'success');
+        }
+
+        // Action: Toggle Document Mock Preview
+        function toggleDocPreview() {
+            const box = document.getElementById('docPreviewBox');
+            const icon = document.getElementById('docPreviewIcon');
+            box.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        // Action: Custom Toast Notifications
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.textContent = message;
+            if (type === 'error') {
+                toastIcon.className = 'fa-solid fa-circle-exclamation text-red-400 text-lg';
+            } else {
+                toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-lg';
+            }
+
+            toast.classList.remove('translate-x-full');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3200);
+        }
+    </script>
+</body>
+</html>
