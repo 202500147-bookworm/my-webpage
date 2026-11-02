@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>한국사·세계사 퀴즈</title>
+<style>
+  :root{
+    --bg:#fdf3e3; --card:#fff; --ink:#2e2418; --sub:#7a6a58;
+    --main:#c46a1c; --main-d:#9a4f0f;
+    --ok:#2e9e5b; --ok-bg:#e3f6ea; --no:#e04848; --no-bg:#fde9e9;
+    --line:#eadcc8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    font-family:"Pretendard","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+    background:linear-gradient(180deg,#fbe6c8 0%,#fff8ee 60%);
+    color:var(--ink);display:flex;justify-content:center;padding:16px;
+  }
+  .app{width:100%;max-width:640px}
+  header{text-align:center;margin:8px 0 16px}
+  header h1{margin:0;font-size:clamp(1.5rem,5vw,2.1rem);color:var(--main-d)}
+  header p{margin:6px 0 0;color:var(--sub);font-size:.95rem}
+  .card{
+    background:var(--card);border-radius:20px;padding:clamp(18px,4vw,30px);
+    box-shadow:0 8px 24px rgba(150,90,20,.14);
+  }
+  .hidden{display:none!important}
+  .emoji{font-size:4rem;text-align:center;margin-bottom:8px}
+  .intro h2{text-align:center;margin:0 0 10px;font-size:1.4rem}
+  .intro ul{padding-left:1.2rem;line-height:1.8;color:var(--sub)}
+  .btn{
+    display:block;width:100%;border:0;border-radius:14px;cursor:pointer;
+    background:var(--main);color:#fff;font-size:1.15rem;font-weight:700;
+    padding:16px;margin-top:18px;font-family:inherit;transition:.15s;
+  }
+  .btn:hover{background:var(--main-d)}
+  .btn:active{transform:scale(.98)}
+  .top{display:flex;justify-content:space-between;align-items:center;font-weight:700;color:var(--sub);font-size:.95rem}
+  .bar{height:10px;background:#f3e6d2;border-radius:99px;overflow:hidden;margin:10px 0 20px}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#f0a04b,#c46a1c);border-radius:99px;transition:width .3s}
+  .cat{display:inline-block;background:#fdeacf;color:var(--main-d);font-weight:800;font-size:.85rem;padding:4px 12px;border-radius:99px;margin-bottom:10px}
+  .q{font-size:clamp(1.2rem,4.5vw,1.5rem);font-weight:800;line-height:1.5;margin:0 0 18px;word-break:keep-all}
+  .opts{display:grid;gap:12px}
+  .opt{
+    display:flex;align-items:center;gap:12px;text-align:left;width:100%;
+    border:2px solid var(--line);background:#fff;border-radius:14px;
+    padding:15px 16px;font-size:1.1rem;font-family:inherit;color:var(--ink);cursor:pointer;
+    min-height:58px;transition:.12s;
+  }
+  .opt:hover:not(:disabled){border-color:var(--main);background:#fff8ef}
+  .opt .n{
+    flex:none;width:30px;height:30px;border-radius:50%;background:#f8ecda;color:var(--main-d);
+    display:grid;place-items:center;font-weight:800;font-size:.95rem
+  }
+  .opt.correct{border-color:var(--ok);background:var(--ok-bg)}
+  .opt.correct .n{background:var(--ok);color:#fff}
+  .opt.wrong{border-color:var(--no);background:var(--no-bg);animation:shake .35s}
+  .opt.wrong .n{background:var(--no);color:#fff}
+  .opt:disabled{cursor:default}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .msg{
+    min-height:56px;margin-top:16px;padding:12px 14px;border-radius:12px;
+    font-weight:700;font-size:1.05rem;line-height:1.5;display:none
+  }
+  .msg.ok{display:block;background:var(--ok-bg);color:var(--ok)}
+  .msg.no{display:block;background:var(--no-bg);color:var(--no)}
+  .msg small{display:block;font-weight:500;color:var(--ink);margin-top:4px;font-size:.95rem}
+  .result{text-align:center}
+  .score{font-size:clamp(3rem,14vw,4.5rem);font-weight:900;color:var(--main-d);line-height:1.1}
+  .score span{font-size:1.4rem;color:var(--sub);font-weight:700}
+  .grade{font-size:1.25rem;font-weight:800;margin:8px 0 4px}
+  .detail{color:var(--sub);margin:0 0 14px}
+  .review{text-align:left;margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+  .review h3{margin:0 0 8px;font-size:1rem}
+  .review li{margin-bottom:6px;line-height:1.5;font-size:.95rem}
+  .sound{background:none;border:0;cursor:pointer;font-size:1.3rem;padding:4px}
+  footer{text-align:center;color:var(--sub);font-size:.8rem;margin:16px 0 4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>📜 한국사·세계사 퀴즈</h1>
+    <p>우리나라와 세계의 옛이야기, 얼마나 알고 있나요?</p>
+  </header>
+
+  <section id="start" class="card intro">
+    <div class="emoji">🏯</div>
+    <h2>도전! 역사 박사</h2>
+    <ul>
+      <li>한국사 5문제와 세계사 5문제, 총 10문제가 나와요.</li>
+      <li>보기 4개 중 정답을 골라요. 할 때마다 문제가 달라져요.</li>
+      <li>틀리면 “다시 생각해보세요!”가 나와요. 다시 골라 보세요.</li>
+      <li>한 번에 맞히면 10점을 받아요.</li>
+    </ul>
+    <button class="btn" id="startBtn">퀴즈 시작하기</button>
+  </section>
+
+  <section id="quiz" class="card hidden">
+    <div class="top">
+      <span id="count">1 / 10</span>
+      <span>
+        점수 <b id="curScore">0</b>점
+        <button class="sound" id="soundBtn" aria-label="효과음 켜기/끄기">🔊</button>
+      </span>
+    </div>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="cat" id="cat"></div>
+    <h2 class="q" id="question"></h2>
+    <div class="opts" id="opts"></div>
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <button class="btn hidden" id="nextBtn">다음 문제 ▶</button>
+  </section>
+
+  <section id="result" class="card result hidden">
+    <div class="emoji" id="rEmoji">🏆</div>
+    <div class="score"><b id="finalScore">0</b><span> / 100점</span></div>
+    <div class="grade" id="grade"></div>
+    <p class="detail" id="detail"></p>
+    <div class="review hidden" id="review">
+      <h3>한 번에 못 맞힌 문제를 다시 볼까요?</h3>
+      <ul id="reviewList"></ul>
+    </div>
+    <button class="btn" id="retryBtn">🔄 다시 도전하기</button>
+  </section>
+
+  <footer>역사를 알면 세상이 더 넓게 보여요 🌏</footer>
+</div>
+
+<script>
+(function(){
+  // ====== 문제 데이터 (필요하면 이 배열을 수정/추가하세요) ======
+  const KOREA = [
+    {q:"우리나라 역사에서 가장 먼저 세워진 나라는 무엇일까요?",
+     a:"고조선", w:["고구려","백제","신라"],
+     e:"고조선은 우리 민족 최초의 나라로 알려져 있어요."},
+    {q:"고조선을 세웠다고 전해지는 인물은 누구일까요?",
+     a:"단군왕검", w:["주몽","온조","박혁거세"],
+     e:"단군왕검이 고조선을 세웠다는 이야기가 전해져요."},
+    {q:"삼국시대의 세 나라에 포함되지 않는 나라는 어디일까요?",
+     a:"발해", w:["고구려","백제","신라"],
+     e:"삼국은 고구려, 백제, 신라예요. 발해는 그 뒤에 세워진 나라예요."},
+    {q:"고려를 세운 왕은 누구일까요?",
+     a:"왕건", w:["이성계","궁예","견훤"],
+     e:"왕건은 918년에 고려를 세우고 후삼국을 통일했어요."},
+    {q:"훈민정음, 즉 한글을 만든 왕은 누구일까요?",
+     a:"세종대왕", w:["태조 이성계","정조","광개토대왕"],
+     e:"세종대왕은 백성들이 쉽게 글을 쓰도록 한글을 만들었어요."},
+    {q:"조선 시대 장영실이 만든 것이 아닌 것은 무엇일까요? (물시계와 측우기를 만들었어요)",
+     a:"거북선", w:["자격루(물시계)","측우기","해시계(앙부일구)"],
+     e:"거북선은 이순신 장군이 이끈 수군의 배예요. 장영실은 세종 때의 과학자예요."},
+    {q:"임진왜란 때 바다에서 왜군을 크게 물리친 장군은 누구일까요?",
+     a:"이순신", w:["을지문덕","강감찬","김유신"],
+     e:"이순신 장군은 거북선과 지혜로운 작전으로 나라를 지켰어요."},
+    {q:"팔만대장경이 보관되어 있는 절은 어디일까요?",
+     a:"합천 해인사", w:["경주 불국사","양산 통도사","영주 부석사"],
+     e:"팔만대장경판은 해인사 장경판전에 보관되어 있어요."},
+    {q:"1919년 3월 1일, 사람들이 태극기를 들고 외친 말은 무엇일까요?",
+     a:"대한독립 만세", w:["대한민국 승리","우리 모두 힘내자","평화를 지키자"],
+     e:"3·1 운동은 전국에서 일어난 독립 만세 운동이에요."},
+    {q:"우리나라가 일본으로부터 광복을 맞은 날은 언제일까요?",
+     a:"1945년 8월 15일", w:["1919년 3월 1일","1948년 10월 3일","1950년 6월 25일"],
+     e:"1945년 8월 15일에 광복을 맞아 지금의 광복절이 되었어요."}
+  ];
+
+  const WORLD = [
+    {q:"이집트의 거대한 피라미드는 누구의 무덤일까요?",
+     a:"왕(파라오)", w:["군인","농부","상인"],
+     e:"피라미드는 고대 이집트 왕인 파라오의 무덤이에요."},
+    {q:"고대 올림픽이 처음 열렸던 곳은 어디일까요?",
+     a:"고대 그리스의 올림피아", w:["로마","바빌론","베이징"],
+     e:"고대 올림픽은 그리스의 올림피아에서 열렸고, 지금 올림픽의 뿌리가 되었어요."},
+    {q:"중국을 처음으로 통일하고 만리장성을 이어 쌓은 황제는 누구일까요?",
+     a:"진시황", w:["칭기즈 칸","유비","나폴레옹"],
+     e:"진시황은 기원전 221년에 중국을 통일한 첫 번째 황제예요."},
+    {q:"로마 시대 원형 경기장인 콜로세움은 어느 나라에 있을까요?",
+     a:"이탈리아", w:["프랑스","그리스","이집트"],
+     e:"콜로세움은 이탈리아의 수도 로마에 있어요."},
+    {q:"넓은 몽골 제국을 세운 사람은 누구일까요?",
+     a:"칭기즈 칸", w:["알렉산드로스","진시황","나폴레옹"],
+     e:"칭기즈 칸은 말을 타고 달리며 아주 넓은 땅을 하나로 합쳤어요."},
+    {q:"1492년 콜럼버스가 배를 타고 도착한 대륙은 어디일까요?",
+     a:"아메리카 대륙", w:["아프리카 대륙","오세아니아 대륙","남극 대륙"],
+     e:"콜럼버스는 인도에 도착했다고 생각했지만 사실은 아메리카 대륙이었어요."},
+    {q:"증기 기관이 발달하면서 산업 혁명이 처음 일어난 나라는 어디일까요?",
+     a:"영국", w:["일본","이집트","브라질"],
+     e:"18세기 영국에서 증기 기관과 기계 덕분에 산업 혁명이 시작됐어요."},
+    {q:"프랑스의 황제가 되어 유럽 여러 나라와 싸운 인물은 누구일까요?",
+     a:"나폴레옹", w:["링컨","간디","콜럼버스"],
+     e:"나폴레옹은 19세기 초 프랑스의 황제가 되어 유럽을 뒤흔들었어요."},
+    {q:"제2차 세계대전이 끝난 해는 언제일까요?",
+     a:"1945년", w:["1918년","1950년","1989년"],
+     e:"1945년에 제2차 세계대전이 끝났고, 우리나라도 같은 해에 광복을 맞았어요."},
+    {q:"1969년 인류 최초로 달에 발을 디딘 사람은 누구일까요?",
+     a:"닐 암스트롱", w:["라이트 형제","에디슨","아인슈타인"],
+     e:"아폴로 11호의 닐 암스트롱이 달 위를 걸은 첫 번째 사람이에요."}
+  ];
+
+  // 한 판에 한국사 5문제 + 세계사 5문제를 무작위로 뽑아요
+  const PER_CAT = 5;
+  const TOTAL = PER_CAT * 2;
+  const POINT = 100 / TOTAL;
+  let QUESTIONS = [];
+
+  const $ = id => document.getElementById(id);
+  const startEl=$("start"), quizEl=$("quiz"), resultEl=$("result");
+  const optsEl=$("opts"), msgEl=$("msg"), nextBtn=$("nextBtn");
+
+  let order=[], idx=0, score=0, tries=0, answered=false, wrongList=[], soundOn=true;
+
+  // ====== 효과음 (Web Audio) ======
+  let ctx=null;
+  function tone(freq,start,dur,type="sine",vol=.2){
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type;o.frequency.value=freq;
+    g.gain.setValueAtTime(vol,ctx.currentTime+start);
+    g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+start+dur);
+    o.connect(g);g.connect(ctx.destination);
+    o.start(ctx.currentTime+start);o.stop(ctx.currentTime+start+dur);
+  }
+  function play(kind){
+    if(!soundOn) return;
+    try{
+      ctx = ctx || new (window.AudioContext||window.webkitAudioContext)();
+      if(ctx.state==="suspended") ctx.resume();
+      if(kind==="ok"){ tone(659,0,.15); tone(880,.13,.15); tone(1175,.26,.3); }
+      else if(kind==="no"){ tone(220,0,.18,"square",.12); tone(165,.16,.3,"square",.12); }
+      else if(kind==="win"){ [523,659,784,1047].forEach((f,i)=>tone(f,i*.15,.25)); }
+    }catch(e){}
+  }
+
+  const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+  function show(el){ [startEl,quizEl,resultEl].forEach(x=>x.classList.add("hidden")); el.classList.remove("hidden"); window.scrollTo({top:0,behavior:"smooth"}); }
+
+  function startQuiz(){
+    QUESTIONS = shuffle(KOREA).slice(0,PER_CAT).map(x=>({...x,cat:"🇰🇷 한국사"}))
+      .concat(shuffle(WORLD).slice(0,PER_CAT).map(x=>({...x,cat:"🌍 세계사"})));
+    order = shuffle(QUESTIONS.map((_,i)=>i));
+    idx=0; score=0; wrongList=[];
+    show(quizEl); render();
+  }
+
+  function render(){
+    const item = QUESTIONS[order[idx]];
+    answered=false; tries=0;
+    $("count").textContent = (idx+1)+" / "+TOTAL;
+    $("curScore").textContent = Math.round(score);
+    $("prog").style.width = (idx/TOTAL*100)+"%";
+    $("cat").textContent = item.cat;
+    $("question").textContent = item.q;
+    msgEl.className="msg"; msgEl.innerHTML="";
+    nextBtn.classList.add("hidden");
+    nextBtn.textContent = idx===TOTAL-1 ? "결과 보기 🏁" : "다음 문제 ▶";
+    optsEl.innerHTML="";
+    shuffle([item.a,...item.w]).forEach((text,i)=>{
+      const b=document.createElement("button");
+      b.className="opt"; b.type="button";
+      b.innerHTML='<span class="n">'+(i+1)+'</span><span></span>';
+      b.lastChild.textContent=text;
+      b.addEventListener("click",()=>choose(b,text===item.a,item));
+      optsEl.appendChild(b);
+    });
+  }
+
+  function choose(btn,isCorrect,item){
+    if(answered) return;
+    tries++;
+    if(isCorrect){
+      answered=true;
+      btn.classList.add("correct");
+      if(tries===1) score += POINT;
+      else wrongList.push(item);
+      $("curScore").textContent = Math.round(score);
+      msgEl.className="msg ok";
+      msgEl.innerHTML = "🎉 정답이에요! 참 잘했어요!<small></small>";
+      msgEl.querySelector("small").textContent = item.e;
+      optsEl.querySelectorAll(".opt").forEach(o=>o.disabled=true);
+      $("prog").style.width = ((idx+1)/TOTAL*100)+"%";
+      nextBtn.classList.remove("hidden");
+      play("ok");
+    }else{
+      btn.classList.add("wrong"); btn.disabled=true;
+      msgEl.className="msg no";
+      msgEl.textContent = "🤔 다시 생각해보세요!";
+      play("no");
+    }
+  }
+
+  function finish(){
+    const s=Math.round(score);
+    const correctFirst = Math.round(s/POINT);
+    $("finalScore").textContent = s;
+    let g,e;
+    if(s===100){g="완벽해요! 역사 박사예요! 🏅";e="🏆";}
+    else if(s>=80){g="대단해요! 우리 역사를 아주 잘 알아요!";e="🌟";}
+    else if(s>=60){g="잘했어요! 조금만 더 배워 볼까요?";e="😊";}
+    else {g="괜찮아요! 다시 도전하면 더 잘할 수 있어요!";e="💪";}
+    $("grade").textContent=g; $("rEmoji").textContent=e;
+    $("detail").textContent = TOTAL+"문제 중 "+correctFirst+"문제를 한 번에 맞혔어요.";
+    const rv=$("review"), list=$("reviewList"); list.innerHTML="";
+    if(wrongList.length){
+      wrongList.forEach(it=>{
+        const li=document.createElement("li");
+        li.textContent = it.q+" → 정답: "+it.a;
+        list.appendChild(li);
+      });
+      rv.classList.remove("hidden");
+    } else rv.classList.add("hidden");
+    show(resultEl);
+    play(s>=60?"win":"no");
+  }
+
+  $("startBtn").addEventListener("click",()=>{ play("win"); startQuiz(); });
+  nextBtn.addEventListener("click",()=>{ idx++; idx<TOTAL ? render() : finish(); });
+  $("retryBtn").addEventListener("click",startQuiz);
+  $("soundBtn").addEventListener("click",e=>{
+    soundOn=!soundOn; e.currentTarget.textContent = soundOn?"🔊":"🔇";
+  });
+  document.addEventListener("keydown",e=>{
+    if(quizEl.classList.contains("hidden")) return;
+    const n=parseInt(e.key,10);
+    if(n>=1&&n<=4){ const b=optsEl.children[n-1]; if(b&&!b.disabled) b.click(); }
+    else if(e.key==="Enter" && !nextBtn.classList.contains("hidden")) nextBtn.click();
+  });
+})();
+</script>
+</body>
+</html>
