@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>도형 변신 교구 - 회전과 뒤집기</title>
+<style>
+:root{--bg1:#eef2ff;--bg2:#fdf2f8;--ink:#1e293b;--sub:#64748b;--pri:#6366f1;--pri-d:#4f46e5;--teal:#0d9488;--card:#fff;--line:#e2e8f0}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font-family:"Pretendard","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;color:var(--ink);background:linear-gradient(135deg,var(--bg1),var(--bg2)) fixed;min-height:100vh;-webkit-tap-highlight-color:transparent}
+.app{max-width:1000px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) 14px 28px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 2px}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{font-size:30px}
+h1{font-size:clamp(18px,4.6vw,24px);margin:0;line-height:1.2}
+.brand p{margin:2px 0 0;color:var(--sub);font-size:clamp(12px,3.2vw,14px)}
+.icon-btn{width:46px;height:46px;border-radius:50%;border:2px solid var(--line);background:#fff;font-size:20px;cursor:pointer}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#e0e7ff;padding:5px;border-radius:16px;margin:10px 0 14px}
+.tabs button{border:0;border-radius:12px;padding:12px 8px;font:inherit;font-weight:700;color:#4338ca;background:transparent;cursor:pointer;min-height:48px}
+.tabs button[aria-selected=true]{background:#fff;box-shadow:0 2px 8px rgba(79,70,229,.2)}
+.layout{display:grid;gap:14px}
+@media(min-width:900px){.layout{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:start}}
+.card{background:var(--card);border-radius:22px;box-shadow:0 8px 24px rgba(30,41,59,.08);padding:14px}
+.stage{position:relative;min-height:380px}
+.boards{display:flex;gap:10px;justify-content:center}
+.board{margin:0;flex:1 1 0;max-width:420px;min-width:0}
+.board figcaption{font-weight:800;font-size:14px;margin:0 0 6px 4px;color:#475569}
+.board svg{display:block;width:100%;height:auto;aspect-ratio:1;background:#fff;border:2px solid var(--line);border-radius:16px}
+.board svg .g{stroke:#e8edf7;stroke-width:1}
+.board svg .ax{stroke:#a5b4fc;stroke-dasharray:5 5;stroke-width:1.5}
+.board svg .axt{fill:#818cf8;font-size:10px}
+.board svg .ghost{fill:none;stroke:#64748b;stroke-dasharray:6 5;stroke-width:2.5;opacity:.85}
+.board svg .shp-user{fill:#ddd6fe;stroke:#6d28d9;stroke-width:3}
+.board svg .shp-target{fill:#bbf7d0;stroke:#15803d;stroke-width:3}
+.quizbar{margin-bottom:10px}
+.qrow{display:flex;justify-content:space-between;font-size:15px;margin-bottom:6px}
+.progress{height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:var(--pri);transition:width .3s}
+.status{margin-top:12px;padding:12px 14px;border-radius:14px;background:#f8fafc;text-align:center;font-size:15px;line-height:1.55;min-height:50px}
+.status.good{background:#dcfce7;color:#166534}
+.status.bad{background:#fee2e2;color:#991b1b}
+.status small{display:block;color:var(--sub);font-size:12.5px;margin-top:2px}
+.legend{margin:10px 0 0;text-align:center;color:var(--sub);font-size:12.5px}
+.overlay{position:absolute;inset:0;background:rgba(255,255,255,.96);border-radius:22px;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;z-index:2}
+.ov-card{text-align:center;max-width:420px}
+.ov-card h2{margin:4px 0 8px;font-size:22px}
+.ov-card p,.ov-card li{font-size:14.5px;line-height:1.6;color:#334155}
+.ov-card ul{text-align:left;margin:8px auto;padding-left:20px;display:inline-block}
+.ov-emoji{font-size:46px}
+.big{font-size:42px;font-weight:900;color:var(--pri-d);margin:4px 0}
+.pts{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin:10px 0}
+.pt{font-size:12px;padding:3px 9px;border-radius:99px;font-weight:700}
+.pt.hi{background:#dcfce7;color:#166534}.pt.mid{background:#fef9c3;color:#854d0e}.pt.lo{background:#fee2e2;color:#991b1b}
+.panel h2{font-size:15px;margin:14px 0 8px;color:#334155}
+.panel h2:first-child{margin-top:2px}
+.panel h2 small{color:var(--sub);font-weight:600}
+.shape-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px}
+.chip{display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 4px;border:2px solid var(--line);background:#fff;border-radius:14px;font:inherit;font-size:11.5px;font-weight:700;color:#475569;cursor:pointer;min-height:62px}
+.chip[aria-pressed=true]{border-color:var(--pri);background:#eef2ff;color:var(--pri-d)}
+.chip:disabled{opacity:.5;cursor:not-allowed}
+.dice{font-size:28px;line-height:34px}
+.ops{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:420px){.ops{grid-template-columns:repeat(4,1fr)}}
+.op{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;min-height:70px;border:0;border-radius:16px;font:inherit;font-weight:800;font-size:13px;color:#fff;cursor:pointer}
+.op .ico{font-size:28px;line-height:1.1}
+.op.rot{background:linear-gradient(#818cf8,#6366f1)}
+.op.flip{background:linear-gradient(#2dd4bf,#0d9488)}
+.op:active,.btn:active{transform:scale(.96)}
+.op:disabled,.btn:disabled{opacity:.45;cursor:not-allowed}
+.row2,.qa{display:grid;gap:8px;margin-top:8px}
+.row2{grid-template-columns:1fr 1fr}
+.qa{grid-template-columns:1fr 1.4fr 1fr;margin-top:12px}
+.btn{border:2px solid var(--line);background:#fff;border-radius:14px;min-height:48px;padding:6px 10px;font:inherit;font-weight:700;font-size:14px;color:#334155;cursor:pointer}
+.btn.primary{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.ok{background:#16a34a;border-color:#16a34a;color:#fff}
+.opts{display:grid;gap:4px}
+.opts label{display:flex;align-items:center;gap:8px;min-height:38px;font-size:14px}
+.opts input[type=checkbox]{width:20px;height:20px;accent-color:var(--pri)}
+.opts select{font:inherit;padding:8px 10px;border-radius:10px;border:2px solid var(--line);background:#fff}
+.hist{display:flex;flex-wrap:wrap;gap:6px;min-height:30px}
+.hist span{background:#f1f5f9;border-radius:99px;padding:4px 10px;font-size:12px;font-weight:600;color:#475569}
+.hist em{font-style:normal;color:var(--sub);font-size:12.5px}
+footer{text-align:center;color:var(--sub);font-size:12.5px;margin-top:16px}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+.shake{animation:shake .4s}
+.pop{animation:pop .4s}
+@media(prefers-reduced-motion:reduce){.shake,.pop{animation:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="logo">🔷</span>
+      <div><h1>도형 변신 교구</h1><p>돌리고 뒤집으며 공간 감각을 키워요</p></div>
+    </div>
+    <button id="soundBtn" class="icon-btn" type="button" aria-pressed="true" aria-label="효과음 켜기/끄기">🔊</button>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="모드 선택">
+    <button id="tabPractice" role="tab" type="button">🎛️ 연습 모드</button>
+    <button id="tabQuiz" role="tab" type="button">🎯 퀴즈 모드</button>
+  </nav>
+
+  <div class="layout">
+    <section class="stage card" aria-label="도형 보드">
+      <div id="quizBar" class="quizbar" hidden>
+        <div class="qrow"><b id="qNo"></b><span id="qScore"></span></div>
+        <div class="progress"><i id="qProg"></i></div>
+      </div>
+      <div class="boards">
+        <figure id="boardTarget" class="board" hidden>
+          <figcaption>🎯 목표 도형</figcaption>
+          <svg id="svgTarget" viewBox="0 0 300 300" role="img" aria-label="목표 도형"></svg>
+        </figure>
+        <figure id="boardUser" class="board">
+          <figcaption>✋ 내 도형</figcaption>
+          <svg id="svgUser" viewBox="0 0 300 300" role="img" aria-label="내 도형"></svg>
+        </figure>
+      </div>
+      <div id="status" class="status" aria-live="polite"></div>
+      <p class="legend">🟠 1번, 🔵 2번 꼭짓점의 위치를 보면 돌았는지, 뒤집혔는지 알 수 있어요.</p>
+      <div id="overlay" class="overlay" hidden></div>
+    </section>
+
+    <section class="panel card" aria-label="조작 패널">
+      <h2>① 도형 고르기</h2>
+      <div id="shapeRow" class="shape-row"></div>
+
+      <h2>② 움직여 보기</h2>
+      <div class="ops">
+        <button class="op rot" data-op="cw" type="button"><span class="ico">↻</span><span id="lblCW">시계 90°</span></button>
+        <button class="op rot" data-op="ccw" type="button"><span class="ico">↺</span><span id="lblCCW">반시계 90°</span></button>
+        <button class="op flip" data-op="fx" type="button"><span class="ico">⇆</span><span>좌우 뒤집기</span></button>
+        <button class="op flip" data-op="fy" type="button"><span class="ico">⇅</span><span>상하 뒤집기</span></button>
+      </div>
+      <div class="row2">
+        <button id="undoBtn" class="btn" type="button">↶ 되돌리기</button>
+        <button id="resetBtn" class="btn" type="button">⟲ 처음으로</button>
+      </div>
+      <div id="quizActions" class="qa" hidden>
+        <button id="hintBtn" class="btn" type="button">💡 힌트</button>
+        <button id="checkBtn" class="btn primary" type="button">✅ 정답 확인</button>
+        <button id="skipBtn" class="btn" type="button">⏭ 건너뛰기</button>
+      </div>
+
+      <h2>③ 설정</h2>
+      <div class="opts">
+        <label>회전 단위
+          <select id="stepSel">
+            <option value="90">90° (쉬움)</option>
+            <option value="45">45° (보통)</option>
+            <option value="30">30° (어려움)</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="optNum" checked> 꼭짓점 번호 보기</label>
+        <label><input type="checkbox" id="optAxes" checked> 기준선(가로·세로) 보기</label>
+        <label><input type="checkbox" id="optGhost" checked> <span id="ghostLbl">원래 모양 겹쳐 보기</span></label>
+      </div>
+
+      <h2>조작 기록 <small id="histCount"></small></h2>
+      <div id="hist" class="hist"></div>
+    </section>
+  </div>
+  <footer>키보드: ← → 회전 · H 좌우 뒤집기 · V 상하 뒤집기 · Z 되돌리기</footer>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const S = 100, C = 150, TOTAL = 10;
+const IDM = [1, 0, 0, 1];
+
+/* ---------- 도형 데이터 ---------- */
+const reg = (n, r = 1) => Array.from({length: n}, (_, i) => {
+  const a = (-90 + 360 / n * i) * Math.PI / 180;
+  return [r * Math.cos(a), r * Math.sin(a)];
+});
+const SHAPES = [
+  {id: 'rtri', name: '직각삼각형', pts: [[-0.8, 0.8], [-0.8, -0.8], [0.8, 0.8]]},
+  {id: 'tri', name: '정삼각형', pts: reg(3, 1.05)},
+  {id: 'sq', name: '정사각형', pts: [[-0.75, -0.75], [0.75, -0.75], [0.75, 0.75], [-0.75, 0.75]]},
+  {id: 'rect', name: '직사각형', pts: [[-1, -0.55], [1, -0.55], [1, 0.55], [-1, 0.55]]},
+  {id: 'pent', name: '오각형', pts: reg(5, 1.05)},
+  {id: 'hex', name: '육각형', pts: reg(6, 1.05)},
+  {id: 'L', name: 'L자 도형', pts: [[-0.6, -1], [-0.1, -1], [-0.1, 0.4], [0.8, 0.4], [0.8, 0.9], [-0.6, 0.9]]},
+  {id: 'arrow', name: '화살표', pts: [[0, -1], [0.8, -0.1], [0.3, -0.1], [0.3, 0.9], [-0.3, 0.9], [-0.3, -0.1], [-0.8, -0.1]]}
+];
+
+/* ---------- 상태 ---------- */
+const st = {mode: 'practice', shapeId: 'rtri', step: 90, M: IDM.slice(), hist: [],
+  numbers: true, axes: true, ghost: true, sound: true};
+const quiz = {phase: 'start', idx: 0, score: 0, correct: 0, wrong: 0, hintLevel: 0, hintUsed: false,
+  locked: false, shape: null, target: null, table: null, pts: [], msg: '', cls: '', lastKey: ''};
+let anim = null;
+
+/* ---------- 행렬 ---------- */
+const mul = (P, M) => [P[0]*M[0] + P[2]*M[1], P[1]*M[0] + P[3]*M[1], P[0]*M[2] + P[2]*M[3], P[1]*M[2] + P[3]*M[3]];
+const snap = M => M.map(x => { const r = Math.round(x * 1e9) / 1e9; return r === 0 ? 0 : r; });
+const rotM = deg => { const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return [c, s, -s, c]; };
+const key = M => M.map(x => (Math.round(x * 1000) / 1000) + 0).join(',');
+const invM = M => { const d = M[0]*M[3] - M[1]*M[2]; return [M[3]/d, -M[1]/d, -M[2]/d, M[0]/d]; };
+function opMat(op, e) {
+  if (op.t === 'rot') return rotM(op.deg * e);
+  if (op.t === 'fx') return [1 - 2*e, 0, 0, 1];
+  return [1, 0, 0, 1 - 2*e];
+}
+const invOp = op => op.t === 'rot' ? {t: 'rot', deg: -op.deg} : op;
+const opLabel = op => op.t === 'rot' ? (op.deg > 0 ? `↻ 시계 ${op.deg}°` : `↺ 반시계 ${-op.deg}°`) : op.t === 'fx' ? '⇆ 좌우 뒤집기' : '⇅ 상하 뒤집기';
+
+function buildTable(step) {
+  const ops = [{t: 'rot', deg: step}, {t: 'rot', deg: -step}, {t: 'fx'}, {t: 'fy'}];
+  const map = new Map();
+  const first = {M: IDM.slice(), key: key(IDM), path: []};
+  map.set(first.key, first);
+  const queue = [first];
+  while (queue.length) {
+    const cur = queue.shift();
+    for (const op of ops) {
+      const M = snap(mul(opMat(op, 1), cur.M)), k = key(M);
+      if (!map.has(k)) { const e = {M, key: k, path: cur.path.concat([op])}; map.set(k, e); queue.push(e); }
+    }
+  }
+  return map;
+}
+
+/* ---------- 그리기 ---------- */
+const pt = (M, p) => [C + (M[0]*p[0] + M[2]*p[1]) * S, C + (M[1]*p[0] + M[3]*p[1]) * S];
+function draw(svg, shape, M, o) {
+  let h = '';
+  for (let i = 30; i < 300; i += 30) h += `<line x1="${i}" y1="0" x2="${i}" y2="300" class="g"/><line x1="0" y1="${i}" x2="300" y2="${i}" class="g"/>`;
+  if (o.axes) {
+    h += '<line x1="150" y1="6" x2="150" y2="294" class="ax"/><line x1="6" y1="150" x2="294" y2="150" class="ax"/>';
+    if (o.labels) h += '<text x="155" y="16" class="axt">세로선 · 좌우 뒤집기 기준</text><text x="294" y="144" text-anchor="end" class="axt">가로선 · 상하 뒤집기 기준</text>';
+  }
+  const str = M2 => shape.pts.map(p => pt(M2, p).map(v => v.toFixed(1)).join(',')).join(' ');
+  if (o.ghostM) h += `<polygon points="${str(o.ghostM)}" class="ghost" stroke-linejoin="round"/>`;
+  h += `<polygon points="${str(M)}" class="${o.cls}" stroke-linejoin="round"/>`;
+  const n = shape.pts.length;
+  const cen = shape.pts.reduce((s, p) => [s[0] + p[0] / n, s[1] + p[1] / n], [0, 0]);
+  [0, 1].forEach(i => {
+    const v = shape.pts[i];
+    const q = [v[0] + 0.2 * (cen[0] - v[0]), v[1] + 0.2 * (cen[1] - v[1])];
+    const [x, y] = pt(M, q);
+    h += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="11" fill="${i ? '#0ea5e9' : '#f97316'}" stroke="#fff" stroke-width="2"/>`;
+    if (o.nums) h += `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" fill="#fff" font-size="13" font-weight="800" text-anchor="middle" dy=".35em">${i + 1}</text>`;
+  });
+  svg.innerHTML = h;
+}
+const playing = () => st.mode === 'quiz' && quiz.phase === 'play';
+function curShape() {
+  if (playing()) return quiz.shape;
+  return SHAPES.find(s => s.id === st.shapeId) || SHAPES[0];
+}
+function drawUser(M) {
+  let ghostM = null;
+  if (st.ghost) ghostM = playing() ? quiz.target.M : IDM;
+  draw($('svgUser'), curShape(), M, {cls: 'shp-user', ghostM, axes: st.axes, nums: st.numbers, labels: st.mode === 'practice'});
+}
+function drawTarget() {
+  if (!playing()) return;
+  draw($('svgTarget'), quiz.shape, quiz.target.M, {cls: 'shp-target', axes: st.axes, nums: st.numbers, labels: false});
+}
+
+/* ---------- 효과음 ---------- */
+let ac = null;
+function sfx(name) {
+  if (!st.sound) return;
+  const seqs = {
+    click: [[520, 0.06, 'sine', 0.05]],
+    ok: [[523, 0.12], [659, 0.12], [784, 0.22]],
+    no: [[220, 0.18, 'sawtooth', 0.07], [185, 0.24, 'sawtooth', 0.07]],
+    done: [[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.32]]
+  };
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+    let t = ac.currentTime;
+    seqs[name].forEach(([f, d, type, v]) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type || 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(v || 0.15, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t); o.stop(t + d + 0.02);
+      t += d * 0.9;
+    });
+  } catch (e) { /* 소리를 지원하지 않는 환경 */ }
+}
+function fx(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
+
+/* ---------- 애니메이션 / 조작 ---------- */
+function runOp(op, record) {
+  if (anim) finishAnim();
+  if (record) st.hist.push(op);
+  renderHist();
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    st.M = snap(mul(opMat(op, 1), st.M)); afterChange(); return;
+  }
+  const a = {op, from: st.M, t0: performance.now(), dur: op.t === 'rot' ? 380 : 420};
+  anim = a;
+  const tick = now => {
+    if (anim !== a) return;
+    const t = Math.max(0, (now - a.t0) / a.dur);
+    if (t >= 1) { finishAnim(); return; }
+    const e = t < .5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2) / 2;
+    drawUser(mul(opMat(op, e), a.from));
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+function finishAnim() {
+  if (!anim) return;
+  st.M = snap(mul(opMat(anim.op, 1), anim.from));
+  anim = null;
+  afterChange();
+}
+const opsLocked = () => st.mode === 'quiz' && !(quiz.phase === 'play' && !quiz.locked);
+function doOp(op) {
+  if (opsLocked()) return;
+  if (playing()) setMsg('🎯 목표와 똑같아지도록 조작해 보세요!', '');
+  sfx('click');
+  runOp(op, true);
+}
+function undo() {
+  if (opsLocked()) return;
+  if (anim) finishAnim();
+  if (!st.hist.length) return;
+  const op = st.hist.pop();
+  sfx('click');
+  runOp(invOp(op), false);
+}
+function resetShape() {
+  if (opsLocked()) return;
+  anim = null; st.M = IDM.slice(); st.hist = [];
+  if (playing()) setMsg('🎯 목표와 똑같아지도록 조작해 보세요!', '');
+  renderHist(); afterChange();
+}
+
+/* ---------- 화면 갱신 ---------- */
+function describe(M) {
+  const flipped = M[0]*M[3] - M[1]*M[2] < 0;
+  const ang = flipped ? Math.atan2(-M[1], -M[0]) : Math.atan2(M[1], M[0]);
+  const deg = ((Math.round(ang * 180 / Math.PI) % 360) + 360) % 360;
+  if (!flipped) return deg === 0 ? '<b>처음 모양 그대로</b>예요.' : `<b>시계 방향으로 ${deg}°</b> 돌아간 모양이에요.`;
+  const head = deg === 0 ? '<b>좌우로 뒤집힌</b> 모양이에요.' : `<b>좌우로 뒤집은 뒤 시계 방향 ${deg}°</b> 돌린 모양이에요.`;
+  return head + '<small>💡 상하 뒤집기 = 좌우 뒤집기 + 180° 회전과 같아요.</small>';
+}
+function setMsg(m, c) { quiz.msg = m; quiz.cls = c || ''; updateStatus(); }
+function updateStatus() {
+  const el = $('status');
+  el.className = 'status';
+  if (st.mode === 'practice') el.innerHTML = describe(st.M);
+  else if (quiz.phase === 'play') { el.innerHTML = quiz.msg; if (quiz.cls) el.classList.add(quiz.cls); }
+  else el.innerHTML = '';
+}
+function renderHist() {
+  const h = $('hist');
+  $('histCount').textContent = st.hist.length ? `(${st.hist.length}번)` : '';
+  if (!st.hist.length) { h.innerHTML = '<em>아직 조작하지 않았어요.</em>'; return; }
+  const shown = st.hist.slice(-12);
+  h.innerHTML = (st.hist.length > 12 ? '<em>…</em>' : '') + shown.map(o => `<span>${opLabel(o)}</span>`).join('');
+}
+function updateUI() {
+  const q = st.mode === 'quiz', play = playing();
+  $('tabPractice').setAttribute('aria-selected', String(!q));
+  $('tabQuiz').setAttribute('aria-selected', String(q));
+  $('quizBar').hidden = !play;
+  $('boardTarget').hidden = !play;
+  $('overlay').hidden = !(q && !play);
+  $('quizActions').hidden = !play;
+  const lock = opsLocked();
+  document.querySelectorAll('[data-op]').forEach(b => b.disabled = lock);
+  $('undoBtn').disabled = lock || !st.hist.length;
+  $('resetBtn').disabled = lock;
+  $('stepSel').disabled = play;
+  $('shapeRow').querySelectorAll('button').forEach(b => b.disabled = play);
+  $('lblCW').textContent = `시계 ${st.step}°`;
+  $('lblCCW').textContent = `반시계 ${st.step}°`;
+  $('ghostLbl').textContent = q ? '목표 모양 겹쳐 보기 (점선)' : '원래 모양 겹쳐 보기 (점선)';
+  if (play) {
+    $('qNo').textContent = `문제 ${quiz.idx + 1} / ${TOTAL}`;
+    $('qScore').textContent = `점수 ${quiz.score}점`;
+    $('qProg').style.width = ((quiz.idx + (quiz.locked ? 1 : 0)) / TOTAL * 100) + '%';
+    const cb = $('checkBtn');
+    cb.textContent = quiz.locked ? (quiz.idx + 1 >= TOTAL ? '🏁 결과 보기' : '➡ 다음 문제') : '✅ 정답 확인';
+    cb.className = 'btn ' + (quiz.locked ? 'ok' : 'primary');
+    $('hintBtn').disabled = quiz.locked;
+    $('skipBtn').disabled = quiz.locked;
+  }
+}
+function afterChange() { drawUser(st.M); drawTarget(); updateStatus(); updateUI(); }
+
+/* ---------- 도형 선택 ---------- */
+function iconSvg(s) {
+  const p = s.pts.map(v => (18 + v[0] * 13).toFixed(1) + ',' + (18 + v[1] * 13).toFixed(1)).join(' ');
+  return `<svg viewBox="0 0 36 36" width="34" height="34" aria-hidden="true"><polygon points="${p}" fill="#c7d2fe" stroke="#6366f1" stroke-width="2" stroke-linejoin="round"/></svg>`;
+}
+function renderShapeRow() {
+  const row = $('shapeRow');
+  row.innerHTML = '';
+  const items = SHAPES.slice();
+  if (st.mode === 'quiz') items.push({id: 'random', name: '랜덤', random: true});
+  items.forEach(s => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.dataset.id = s.id;
+    b.setAttribute('aria-pressed', String(st.shapeId === s.id));
+    b.innerHTML = (s.random ? '<span class="dice">🎲</span>' : iconSvg(s)) + `<span>${s.name}</span>`;
+    row.appendChild(b);
+  });
+}
+
+/* ---------- 퀴즈 ---------- */
+const bestKey = 'shapeLab.best';
+function loadBest() { try { return +localStorage.getItem(bestKey) || 0; } catch (e) { return 0; } }
+function saveBest(v) { try { localStorage.setItem(bestKey, String(v)); } catch (e) {} }
+
+function startQuiz() {
+  quiz.phase = 'play'; quiz.idx = 0; quiz.score = 0; quiz.correct = 0; quiz.pts = [];
+  quiz.table = buildTable(st.step); quiz.lastKey = '';
+  setupQuestion();
+}
+function setupQuestion() {
+  quiz.shape = st.shapeId === 'random' ? SHAPES[Math.floor(Math.random() * SHAPES.length)] : SHAPES.find(s => s.id === st.shapeId);
+  const cands = [...quiz.table.values()].filter(e => e.path.length > 0 && e.key !== quiz.lastKey);
+  quiz.target = cands[Math.floor(Math.random() * cands.length)];
+  quiz.lastKey = quiz.target.key;
+  anim = null; st.M = IDM.slice(); st.hist = [];
+  quiz.wrong = 0; quiz.hintLevel = 0; quiz.hintUsed = false; quiz.locked = false;
+  st.ghost = false; $('optGhost').checked = false;
+  quiz.msg = '🎯 목표와 똑같아지도록 조작해 보세요!'; quiz.cls = '';
+  renderHist(); renderOverlay(); afterChange();
+}
+function check() {
+  if (!playing()) return;
+  if (anim) finishAnim();
+  if (quiz.locked) { nextQuestion(); return; }
+  if (key(st.M) === quiz.target.key) {
+    const p = Math.max(2, 10 - quiz.wrong * 2 - (quiz.hintUsed ? 2 : 0));
+    quiz.score += p; quiz.correct++; quiz.pts[quiz.idx] = p; quiz.locked = true;
+    setMsg(`🎉 정답이에요! +${p}점`, 'good');
+    sfx('ok'); fx($('boardUser'), 'pop');
+  } else {
+    quiz.wrong++;
+    const same = (M => M[0]*M[3] - M[1]*M[2] > 0)(st.M) === (quiz.target.M[0]*quiz.target.M[3] - quiz.target.M[1]*quiz.target.M[2] > 0);
+    setMsg(same ? '아쉬워요! 뒤집힘은 맞아요. 이제 <b>회전한 각도</b>만 맞춰 보세요.'
+                : '아직 달라요! <b>뒤집기</b> 여부가 달라요. 🟠1·🔵2 위치를 비교해 보세요.', 'bad');
+    sfx('no'); fx($('boardUser'), 'shake');
+  }
+  updateUI();
+}
+function nextQuestion() {
+  if (quiz.idx + 1 >= TOTAL) { finishQuiz(); return; }
+  quiz.idx++; setupQuestion();
+}
+function skip() {
+  if (!playing() || quiz.locked) return;
+  if (anim) finishAnim();
+  quiz.pts[quiz.idx] = 0; sfx('click');
+  nextQuestion();
+}
+function hint() {
+  if (!playing() || quiz.locked) return;
+  if (anim) finishAnim();
+  const Q = snap(mul(quiz.target.M, invM(st.M)));
+  const e = quiz.table.get(key(Q));
+  quiz.hintUsed = true; quiz.hintLevel++;
+  if (!e) { setMsg('힌트를 찾지 못했어요. 처음으로 돌아가 다시 해 보세요.', ''); return; }
+  if (!e.path.length) { setMsg('💡 이미 목표와 같아요! <b>정답 확인</b>을 눌러 보세요.', ''); return; }
+  let m = `💡 지금 모양에서 최소 <b>${e.path.length}번</b> 조작하면 목표와 같아져요.`;
+  if (quiz.hintLevel >= 2) m += `<small>첫 번째 조작: ${opLabel(e.path[0])}</small>`;
+  setMsg(m, '');
+}
+function finishQuiz() {
+  quiz.phase = 'done';
+  const prev = loadBest();
+  quiz.newBest = quiz.score > prev;
+  if (quiz.newBest) saveBest(quiz.score);
+  sfx('done');
+  renderOverlay(); afterChange();
+}
+function renderOverlay() {
+  const ov = $('overlay');
+  if (st.mode !== 'quiz') { ov.innerHTML = ''; return; }
+  if (quiz.phase === 'start') {
+    const best = loadBest();
+    ov.innerHTML = `<div class="ov-card"><div class="ov-emoji">🎯</div><h2>도형 퀴즈</h2>
+      <p>화면에 나오는 <b>목표 도형</b>과 똑같은 모양이 되도록 회전·뒤집기를 해서 맞춰 보세요.</p>
+      <ul><li>총 ${TOTAL}문제, 문제당 최대 10점</li><li>틀리거나 힌트를 쓰면 점수가 조금 깎여요</li></ul>
+      <p style="font-size:12.5px;color:#64748b">아래에서 도형과 회전 단위를 고른 뒤 시작하세요.</p>
+      ${best ? `<p>🏆 최고 점수 <b>${best}점</b></p>` : ''}
+      <button class="btn primary" data-act="start" type="button" style="width:100%">🚀 퀴즈 시작</button></div>`;
+  } else if (quiz.phase === 'done') {
+    const s = quiz.score;
+    const msg = s >= 90 ? '🏆 도형 박사예요!' : s >= 70 ? '🌟 도형 달인이에요!' : s >= 50 ? '👍 잘하고 있어요!' : '💪 연습 모드에서 조금 더 연습해 봐요!';
+    ov.innerHTML = `<div class="ov-card"><div class="ov-emoji">🏁</div><h2>퀴즈 끝!</h2>
+      <div class="big">${s}점</div><p>${TOTAL}문제 중 <b>${quiz.correct}문제</b>를 맞혔어요. ${msg}</p>
+      ${quiz.newBest ? '<p>🎉 최고 점수를 새로 세웠어요!</p>' : ''}
+      <div class="pts">${quiz.pts.map((p, i) => `<span class="pt ${p >= 8 ? 'hi' : p > 0 ? 'mid' : 'lo'}">${i + 1}번 ${p}점</span>`).join('')}</div>
+      <div class="row2"><button class="btn primary" data-act="again" type="button">🔄 다시 도전</button>
+      <button class="btn" data-act="practice" type="button">🎛️ 연습하기</button></div></div>`;
+  } else ov.innerHTML = '';
+}
+
+/* ---------- 모드 전환 ---------- */
+function setMode(m) {
+  if (m === st.mode) return;
+  if (m === 'practice' && quiz.phase === 'play' && !confirm('퀴즈를 그만두고 연습 모드로 갈까요?')) return;
+  anim = null; st.mode = m; quiz.phase = 'start';
+  st.M = IDM.slice(); st.hist = [];
+  st.ghost = m === 'practice'; $('optGhost').checked = st.ghost;
+  if (m === 'practice' && st.shapeId === 'random') st.shapeId = SHAPES[0].id;
+  renderShapeRow(); renderHist(); renderOverlay(); afterChange();
+}
+
+/* ---------- 이벤트 ---------- */
+$('tabPractice').onclick = () => setMode('practice');
+$('tabQuiz').onclick = () => setMode('quiz');
+$('soundBtn').onclick = () => {
+  st.sound = !st.sound;
+  $('soundBtn').textContent = st.sound ? '🔊' : '🔇';
+  $('soundBtn').setAttribute('aria-pressed', String(st.sound));
+};
+$('shapeRow').onclick = e => {
+  const b = e.target.closest('.chip');
+  if (!b || b.disabled) return;
+  st.shapeId = b.dataset.id;
+  anim = null; st.M = IDM.slice(); st.hist = [];
+  sfx('click'); renderShapeRow(); renderHist(); afterChange();
+};
+document.querySelectorAll('[data-op]').forEach(b => b.onclick = () => {
+  const k = b.dataset.op;
+  doOp(k === 'cw' ? {t: 'rot', deg: st.step} : k === 'ccw' ? {t: 'rot', deg: -st.step} : {t: k});
+});
+$('undoBtn').onclick = undo;
+$('resetBtn').onclick = resetShape;
+$('hintBtn').onclick = hint;
+$('checkBtn').onclick = check;
+$('skipBtn').onclick = skip;
+$('stepSel').onchange = e => { st.step = +e.target.value; st.hist = []; st.M = IDM.slice(); anim = null; renderHist(); afterChange(); };
+$('optNum').onchange = e => { st.numbers = e.target.checked; afterChange(); };
+$('optAxes').onchange = e => { st.axes = e.target.checked; afterChange(); };
+$('optGhost').onchange = e => { st.ghost = e.target.checked; afterChange(); };
+$('overlay').onclick = e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  if (b.dataset.act === 'practice') { quiz.phase = 'start'; setMode('practice'); }
+  else { sfx('click'); startQuiz(); }
+};
+document.addEventListener('keydown', e => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (tag === 'input' || tag === 'select' || tag === 'textarea' || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === 'arrowright') { e.preventDefault(); doOp({t: 'rot', deg: st.step}); }
+  else if (k === 'arrowleft') { e.preventDefault(); doOp({t: 'rot', deg: -st.step}); }
+  else if (k === 'h') doOp({t: 'fx'});
+  else if (k === 'v') doOp({t: 'fy'});
+  else if (k === 'z') undo();
+});
+
+/* ---------- 시작 ---------- */
+renderShapeRow(); renderHist(); renderOverlay(); afterChange();
+})();
+</script>
+</body>
+</html>
