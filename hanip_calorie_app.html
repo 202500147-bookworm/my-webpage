@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f6f7f2">
+<title>한입 칼로리 | AI 음식 영양 분석</title>
+<style>
+:root{--bg:#f6f7f2;--card:#fff;--ink:#20251f;--muted:#788078;--green:#317b58;--lime:#dff2a8;--line:#e8ece4;--soft:#f1f6ec;--orange:#f4a261;--shadow:0 14px 40px rgba(39,61,43,.08)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif}button,input{font:inherit}button{cursor:pointer}.app{max-width:1120px;margin:auto;padding:28px 24px 60px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:38px}.brand{display:flex;align-items:center;gap:10px;font-weight:850;font-size:21px;letter-spacing:-.7px}.logo{width:38px;height:38px;border-radius:13px;background:var(--green);color:white;display:grid;place-items:center;font-size:20px}.tag{font-size:12px;color:var(--green);background:#e8f3e7;border-radius:30px;padding:8px 13px;font-weight:700}.hero{margin-bottom:28px}.eyebrow{font-size:12px;color:var(--green);font-weight:800;letter-spacing:1.5px}.hero h1{font-size:clamp(30px,5vw,48px);line-height:1.18;letter-spacing:-2px;margin:10px 0}.hero h1 span{color:var(--green)}.hero p{margin:0;color:var(--muted);font-size:15px;line-height:1.7}.layout{display:grid;grid-template-columns: .92fr 1.08fr;gap:22px;align-items:start}.card{background:var(--card);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:var(--shadow)}.card-title{font-size:17px;font-weight:800;margin:0 0 5px}.sub{font-size:13px;color:var(--muted);margin:0 0 18px}.drop{border:1.5px dashed #cbd8c9;background:#fbfdf9;border-radius:18px;min-height:270px;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden;transition:.2s}.drop.drag{border-color:var(--green);background:#f0f8ed}.drop img{width:100%;height:100%;max-height:360px;object-fit:cover;position:absolute;inset:0}.drop-content{padding:28px;position:relative;z-index:1}.drop.has-image .drop-content{display:none}.upload-icon{width:54px;height:54px;border-radius:18px;background:var(--lime);display:grid;place-items:center;margin:0 auto 14px;font-size:25px}.drop strong{display:block;font-size:15px}.drop small{display:block;color:var(--muted);margin-top:7px;font-size:12px}.file{display:none}.btn{border:0;border-radius:14px;padding:14px 18px;font-weight:800;transition:.2s}.btn-primary{background:var(--green);color:white;width:100%;margin-top:16px}.btn-primary:hover{background:#256747;transform:translateY(-1px)}.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}.btn-ghost{background:var(--soft);color:var(--green);padding:10px 14px;font-size:13px}.hint{font-size:11px;color:#8a9389;line-height:1.6;margin:12px 2px 0}.right{display:grid;gap:18px}.empty{min-height:230px;display:grid;place-items:center;text-align:center;color:var(--muted)}.empty .emoji{font-size:38px;margin-bottom:10px}.result-head{display:flex;justify-content:space-between;gap:12px;align-items:start}.dish-input{font-size:23px;font-weight:850;letter-spacing:-.8px;border:0;border-bottom:1px solid transparent;outline:none;width:100%;max-width:340px;color:var(--ink);padding:2px 0;background:transparent}.dish-input:focus{border-color:var(--green)}.confidence{font-size:11px;background:#edf5e9;color:var(--green);padding:7px 10px;border-radius:30px;white-space:nowrap;font-weight:700}.calorie{background:linear-gradient(135deg,#eff7e7,#f8faef);border-radius:18px;padding:18px 20px;margin:18px 0}.calorie-label{font-size:12px;color:#647261;font-weight:700}.calorie-num{font-size:42px;font-weight:900;letter-spacing:-2px;color:var(--green);line-height:1.2;margin-top:3px}.calorie-num small{font-size:15px;letter-spacing:0}.serving{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:#647261}.serving input{width:65px;border:1px solid #d6e1d0;background:white;border-radius:8px;padding:5px 7px;color:var(--ink)}.macro-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.macro{border:1px solid var(--line);border-radius:15px;padding:13px}.macro .name{font-size:12px;color:var(--muted)}.macro b{display:block;font-size:20px;margin-top:5px}.macro .bar{height:5px;border-radius:8px;background:#edf0eb;margin-top:9px;overflow:hidden}.macro .bar i{display:block;height:100%;border-radius:8px}.carb i{background:#e9b65b}.protein i{background:#69a9d1}.fat i{background:#d98c75}.section-row{display:flex;align-items:center;justify-content:space-between;margin:20px 0 10px}.section-row h3{font-size:14px;margin:0}.ingredient-list{display:grid;gap:8px}.ingredient{display:grid;grid-template-columns:1fr 76px 32px;gap:8px;align-items:center}.ingredient input{min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fff;color:var(--ink);font-size:13px}.ingredient .grams{text-align:right}.remove{border:0;background:#f8eeee;color:#b85b55;border-radius:9px;height:36px;font-size:18px}.add{width:100%;border:1px dashed #cbd8c9;background:#fbfdf9;color:var(--green);border-radius:11px;padding:10px;margin-top:9px;font-weight:700;font-size:13px}.notice{font-size:11px;color:#8a9389;line-height:1.6;margin:15px 2px 0}.actions{display:flex;gap:10px;margin-top:18px}.actions .btn{flex:1}.hidden{display:none!important}.loading{display:inline-flex;align-items:center;gap:9px}.spinner{width:15px;height:15px;border:2px solid #ffffff66;border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}footer{text-align:center;color:#9aa197;font-size:11px;margin-top:30px}
+@media(max-width:760px){.app{padding:19px 15px 40px}.top{margin-bottom:28px}.layout{grid-template-columns:1fr;gap:16px}.card{padding:19px;border-radius:20px}.drop{min-height:225px}.hero h1{letter-spacing:-1.4px}.result-head{align-items:center}.calorie-num{font-size:38px}}
+@media(max-width:380px){.macro{padding:10px}.macro b{font-size:17px}.ingredient{grid-template-columns:1fr 68px 30px;gap:5px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="brand"><div class="logo">한</div> 한입 칼로리</div><div class="tag">AI FOOD SCANNER</div></header>
+  <section class="hero"><div class="eyebrow">SMART NUTRITION, ONE SNAP</div><h1>사진 한 장으로<br><span>가볍게 확인하는</span> 오늘의 영양</h1><p>음식 사진을 올리면 칼로리와 탄수화물·단백질·지방을 간편하게 추정해요.</p></section>
+  <main class="layout">
+    <section class="card">
+      <h2 class="card-title">음식 사진 올리기</h2><p class="sub">먹을 음식이 잘 보이도록 촬영해 주세요.</p>
+      <label class="drop" id="drop">
+        <img id="preview" class="hidden" alt="업로드한 음식 사진">
+        <div class="drop-content"><div class="upload-icon">＋</div><strong>사진을 여기에 끌어놓거나</strong><small>JPG, PNG, WEBP · 최대 10MB</small><span class="btn btn-ghost" style="display:inline-block;margin-top:16px">사진 선택하기</span></div>
+        <input class="file" id="file" type="file" accept="image/*">
+      </label>
+      <button class="btn btn-primary" id="analyze" disabled>✨ 사진 분석하기</button>
+      <p class="hint">※ 현재 파일은 브라우저에서 동작하는 데모입니다. 실제 이미지 인식 AI를 연결하기 전까지 분석 예시를 보여주며, 음식명과 재료를 직접 수정할 수 있습니다.</p>
+    </section>
+    <section class="right">
+      <div class="card" id="resultCard">
+        <div class="empty" id="empty"><div><div class="emoji">🥗</div><b style="color:var(--ink)">분석 결과가 여기에 표시돼요</b><div style="font-size:12px;margin-top:7px">사진을 올리고 분석하기를 눌러보세요.</div></div></div>
+        <div id="results" class="hidden">
+          <div class="result-head"><div style="flex:1;min-width:0"><div class="eyebrow" style="letter-spacing:1px">ANALYSIS RESULT</div><input id="dishName" class="dish-input" value="비빔밥" aria-label="음식 이름"></div><span class="confidence">추정 결과</span></div>
+          <div class="calorie"><div class="calorie-label">예상 총 칼로리</div><div class="calorie-num"><span id="kcal">520</span><small> kcal</small></div><div class="serving">섭취량 <input id="serving" type="number" min="0.1" max="10" step="0.1" value="1"> 인분 기준</div></div>
+          <div class="section-row" style="margin-top:0"><h3>주요 영양 성분</h3><span style="font-size:11px;color:var(--muted)">1회 섭취량 기준</span></div>
+          <div class="macro-grid">
+            <div class="macro carb"><span class="name">탄수화물</span><b><span id="carbs">78</span>g</b><div class="bar"><i id="carbBar" style="width:78%"></i></div></div>
+            <div class="macro protein"><span class="name">단백질</span><b><span id="protein">18</span>g</b><div class="bar"><i id="proteinBar" style="width:36%"></i></div></div>
+            <div class="macro fat"><span class="name">지방</span><b><span id="fat">14</span>g</b><div class="bar"><i id="fatBar" style="width:28%"></i></div></div>
+          </div>
+          <div class="section-row"><h3>음식명 및 주요 재료 수정</h3><button class="btn btn-ghost" id="addIngredient" style="padding:7px 10px">＋ 재료 추가</button></div>
+          <div class="ingredient-list" id="ingredients"></div>
+          <p class="notice">재료와 중량을 수정하면 영양 추정치가 자동으로 다시 계산됩니다. 기본 재료별 영양값을 바탕으로 한 참고용 계산입니다.</p>
+          <div class="actions"><button class="btn btn-ghost" id="reset">↻ 다시 시작</button><button class="btn btn-primary" id="recalc" style="margin:0">영양 다시 계산</button></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>한입 칼로리 · 건강한 식습관을 위한 참고용 추정 서비스</footer>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const file=$('file'),drop=$('drop'),preview=$('preview'),analyze=$('analyze');
+let imageReady=false;
+let ingredients=[];
+const nutrition={
+ '밥':{k:1.3,c:0.285,p:0.027,f:0.003},'쌀밥':{k:1.3,c:0.285,p:0.027,f:0.003},
+ '소고기':{k:2.5,c:0,p:0.26,f:0.17},'돼지고기':{k:2.4,c:0,p:0.27,f:0.14},
+ '닭고기':{k:1.65,c:0,p:0.31,f:0.036},'계란':{k:1.43,c:0.007,p:0.126,f:0.095},
+ '당근':{k:.41,c:.096,p:.009,f:.002},'시금치':{k:.23,c:.036,p:.029,f:.004},
+ '콩나물':{k:.3,c:.06,p:.03,f:.01},'애호박':{k:.17,c:.031,p:.012,f:.003},
+ '고추장':{k:2.3,c:.46,p:.04,f:.03},'참기름':{k:8.84,c:0,p:0,f:1},
+ '두부':{k:.76,c:.02,p:.08,f:.048},'김치':{k:.3,c:.047,p:.015,f:.006},
+ '감자':{k:.77,c:.17,p:.02,f:.001},'브로콜리':{k:.34,c:.067,p:.028,f:.004},
+ '양파':{k:.4,c:.093,p:.011,f:.001},'식용유':{k:8.84,c:0,p:0,f:1}
+};
+function setFile(f){if(!f)return;if(!f.type.startsWith('image/')){alert('이미지 파일을 선택해 주세요.');return}if(f.size>10*1024*1024){alert('10MB 이하의 사진을 선택해 주세요.');return}
+ const url=URL.createObjectURL(f);preview.src=url;preview.classList.remove('hidden');drop.classList.add('has-image');imageReady=true;analyze.disabled=false;}
+file.addEventListener('change',e=>setFile(e.target.files[0]));
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));
+drop.addEventListener('drop',e=>setFile(e.dataTransfer.files[0]));
+analyze.addEventListener('click',()=>{
+ if(!imageReady)return;
+ analyze.disabled=true;analyze.innerHTML='<span class="loading"><i class="spinner"></i> 음식 분석 중...</span>';
+ setTimeout(()=>{
+  // Demo result: replace this sample with a secure server-side vision AI API call.
+  ingredients=[{name:'밥',grams:180},{name:'소고기',grams:35},{name:'당근',grams:25},{name:'시금치',grams:25},{name:'콩나물',grams:30},{name:'계란',grams:50},{name:'고추장',grams:15},{name:'참기름',grams:5}];
+  $('dishName').value='비빔밥';renderIngredients();$('empty').classList.add('hidden');$('results').classList.remove('hidden');calculate();
+  analyze.disabled=false;analyze.textContent='✨ 다시 분석하기';
+ },900);
+});
+function renderIngredients(){
+ $('ingredients').innerHTML='';
+ ingredients.forEach((item,i)=>{
+  const row=document.createElement('div');row.className='ingredient';
+  const name=document.createElement('input');name.value=item.name;name.setAttribute('aria-label','재료 이름');name.placeholder='재료명';
+  name.addEventListener('input',e=>{ingredients[i].name=e.target.value});
+  const grams=document.createElement('input');grams.type='number';grams.min='0';grams.step='1';grams.value=item.grams;grams.className='grams';grams.setAttribute('aria-label','중량(g)');
+  grams.addEventListener('input',e=>{ingredients[i].grams=Math.max(0,Number(e.target.value)||0);calculate()});
+  const del=document.createElement('button');del.className='remove';del.textContent='×';del.title='재료 삭제';del.addEventListener('click',()=>{ingredients.splice(i,1);renderIngredients();calculate()});
+  row.append(name,grams,del);$('ingredients').append(row);
+ });
+}
+$('addIngredient').addEventListener('click',()=>{ingredients.push({name:'새 재료',grams:30});renderIngredients();calculate();const inputs=$('ingredients').querySelectorAll('input');inputs[inputs.length-2].focus();inputs[inputs.length-2].select()});
+$('recalc').addEventListener('click',calculate);
+$('serving').addEventListener('input',calculate);
+function calculate(){
+ let total={k:0,c:0,p:0,f:0};
+ ingredients.forEach(x=>{const n=nutrition[x.name.trim()]||{k:1.2,c:.15,p:.04,f:.04};const g=Math.max(0,Number(x.grams)||0)/100;Object.keys(total).forEach(key=>total[key]+=n[key]*g)});
+ const s=Math.max(.1,Number($('serving').value)||1);
+ $('kcal').textContent=Math.round(total.k* s);$('carbs').textContent=(total.c*s).toFixed(1);$('protein').textContent=(total.p*s).toFixed(1);$('fat').textContent=(total.f*s).toFixed(1);
+ $('carbBar').style.width=Math.min(100,total.c* s/1.2)+'%';$('proteinBar').style.width=Math.min(100,total.p*s/0.5)+'%';$('fatBar').style.width=Math.min(100,total.f*s/0.5)+'%';
+}
+$('reset').addEventListener('click',()=>{
+ file.value='';preview.src='';preview.classList.add('hidden');drop.classList.remove('has-image');imageReady=false;analyze.disabled=true;analyze.textContent='✨ 사진 분석하기';
+ $('results').classList.add('hidden');$('empty').classList.remove('hidden');$('serving').value=1;ingredients=[];
+});
+</script>
+</body>
+</html>
