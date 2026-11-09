@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f4f7ff">
+<title>똑딱똑딱! 시계 읽기 탐험</title>
+<style>
+:root{--ink:#24304a;--muted:#6b7690;--blue:#5277e8;--blue2:#eaf0ff;--pink:#ff7898;--green:#1c9b72;--red:#d84c62;--paper:#fff;--line:#e5eaf5}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:linear-gradient(145deg,#f3f6ff,#fff8f3);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}
+button,input{font:inherit}
+button{cursor:pointer;border:0}
+.app{width:min(1080px,100%);margin:auto;padding:22px 18px 40px}
+header{text-align:center;margin:8px 0 22px}
+.eyebrow{display:inline-block;padding:6px 13px;border-radius:99px;background:#fff0f4;color:#d84f75;font-weight:800;font-size:13px}
+h1{font-size:clamp(26px,5vw,40px);margin:10px 0 5px;letter-spacing:-1.2px}
+.subtitle{color:var(--muted);margin:0;font-size:15px}
+.layout{display:grid;grid-template-columns:minmax(280px,1fr) minmax(300px,.95fr);gap:18px;align-items:stretch}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:22px;box-shadow:0 12px 34px #3344770c}
+.panel h2{font-size:19px;margin:0 0 15px}
+.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px}
+.level{padding:11px 5px;border:1.5px solid var(--line);border-radius:14px;background:#fff;color:var(--ink);font-weight:800;font-size:14px}
+.level small{display:block;color:var(--muted);font-size:11px;font-weight:600;margin-top:3px}
+.level.active{background:var(--blue2);border-color:var(--blue);color:#3158c7}
+.clock-wrap{width:min(100%,390px);margin:0 auto;aspect-ratio:1;display:grid;place-items:center}
+svg{width:100%;height:100%;overflow:visible}
+.clock-face{fill:#fff;stroke:#dfe6f4;stroke-width:5}
+.tick{stroke:#aab5ca;stroke-width:1.5;stroke-linecap:round}
+.tick.major{stroke:#647391;stroke-width:3}
+.clock-number{font-size:19px;font-weight:800;fill:#34415d;text-anchor:middle;dominant-baseline:middle}
+.hand-hour{stroke:#30415f;stroke-width:9;stroke-linecap:round}
+.hand-minute{stroke:#5277e8;stroke-width:5.5;stroke-linecap:round}
+.hand-center{fill:#ff7898;stroke:#fff;stroke-width:3}
+.clock-legend{display:flex;justify-content:center;gap:18px;color:var(--muted);font-size:13px;font-weight:700;margin-top:3px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+.question{background:#f7f9ff;border-radius:18px;padding:15px;margin-top:15px;text-align:center}
+.question strong{font-size:20px}
+.hintline{font-size:13px;color:var(--muted);margin:5px 0 0}
+.answer-title{margin:0 0 13px;font-size:18px}
+.answer-row{display:flex;align-items:center;gap:9px;margin:12px 0}
+.answer-row label{width:38px;font-weight:800}
+.answer-row input{min-width:0;width:100%;padding:13px 12px;border:1.5px solid #dce3f1;border-radius:13px;background:#fff;font-size:20px;text-align:center;font-weight:800;color:var(--ink);outline:none}
+.answer-row input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #5277e822}
+.unit{font-weight:800;color:var(--muted);width:30px}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
+.primary,.secondary{padding:14px;border-radius:14px;font-weight:900;font-size:16px}
+.primary{background:var(--blue);color:#fff;box-shadow:0 5px 0 #365bc4}
+.primary:active{transform:translateY(2px);box-shadow:0 3px 0 #365bc4}
+.secondary{background:#eef1f8;color:#46536e}
+.feedback{min-height:74px;margin-top:15px;padding:13px 15px;border-radius:15px;background:#f7f9fc;color:var(--muted);font-size:14px;line-height:1.55}
+.feedback.good{background:#eaf9f2;color:#147b59}
+.feedback.bad{background:#fff0f1;color:#b53c51}
+.feedback strong{display:block;font-size:16px;margin-bottom:2px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:17px}
+.stat{padding:12px 5px;text-align:center;background:#f7f9ff;border-radius:14px}
+.stat b{display:block;font-size:24px;color:#34415f}
+.stat span{font-size:12px;color:var(--muted);font-weight:700}
+.progress{height:7px;background:#edf0f7;border-radius:99px;margin-top:17px;overflow:hidden}
+.progress>div{height:100%;width:0;background:linear-gradient(90deg,#6c8cf0,#ff8da7);transition:width .3s}
+.note{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.confetti i{position:absolute;top:-20px;width:9px;height:14px;border-radius:3px;animation:fall 1.35s ease-in forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.2}}
+@media(max-width:760px){.app{padding:15px 12px 28px}.layout{grid-template-columns:1fr;gap:13px}.panel{padding:17px;border-radius:20px}.clock-wrap{width:min(100%,340px)}header{margin-bottom:16px}.levels{gap:6px}.level{font-size:12px;padding:10px 2px}.level small{font-size:10px}}
+@media(max-width:360px){.actions{grid-template-columns:1fr}.levels{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <span class="eyebrow">초등 수학 · 1~2학년</span>
+  <h1>🕒 똑딱똑딱! 시계 읽기 탐험</h1>
+  <p class="subtitle">시계 바늘을 살펴보고 몇 시 몇 분인지 맞혀 보세요!</p>
+</header>
+<main class="layout">
+<section class="panel">
+  <h2>① 연습 단계를 골라요</h2>
+  <div class="levels" role="group" aria-label="난이도 선택">
+    <button class="level active" data-level="1">1단계<small>정시</small></button>
+    <button class="level" data-level="2">2단계<small>30분</small></button>
+    <button class="level" data-level="3">3단계<small>5분 단위</small></button>
+    <button class="level" data-level="4">4단계<small>1분 단위</small></button>
+  </div>
+  <div class="clock-wrap">
+    <svg id="clock" viewBox="0 0 360 360" role="img" aria-label="시각을 나타내는 아날로그 시계">
+      <circle class="clock-face" cx="180" cy="180" r="158"/>
+      <g id="ticks"></g><g id="numbers"></g>
+      <line id="hourHand" class="hand-hour" x1="180" y1="180" x2="180" y2="112"/>
+      <line id="minuteHand" class="hand-minute" x1="180" y1="180" x2="180" y2="65"/>
+      <circle class="hand-center" cx="180" cy="180" r="8"/>
+    </svg>
+  </div>
+  <div class="clock-legend">
+    <span><i class="dot" style="background:#30415f"></i>짧은 바늘: 시침</span>
+    <span><i class="dot" style="background:#5277e8"></i>긴 바늘: 분침</span>
+  </div>
+  <div class="question">
+    <strong>몇 시 몇 분일까요?</strong>
+    <p class="hintline">긴 바늘은 분, 짧은 바늘은 시를 알려줘요.</p>
+  </div>
+</section>
+<section class="panel">
+  <h2>② 시각을 읽고 답을 써요</h2>
+  <p class="answer-title">시계가 가리키는 시각은?</p>
+  <div class="answer-row">
+    <label for="hours">시</label>
+    <input id="hours" type="number" min="1" max="12" inputmode="numeric" placeholder="1~12" aria-label="시 입력">
+    <span class="unit">시</span>
+  </div>
+  <div class="answer-row">
+    <label for="minutes">분</label>
+    <input id="minutes" type="number" min="0" max="59" inputmode="numeric" placeholder="0~59" aria-label="분 입력">
+    <span class="unit">분</span>
+  </div>
+  <div class="actions">
+    <button class="primary" id="checkBtn">정답 확인!</button>
+    <button class="secondary" id="nextBtn">다음 문제 →</button>
+  </div>
+  <div class="feedback" id="feedback" aria-live="polite">시계 바늘을 잘 살펴보고 답을 입력해 보세요. 😊</div>
+  <div class="stats">
+    <div class="stat"><b id="total">0</b><span>푼 문제</span></div>
+    <div class="stat"><b id="correct">0</b><span>맞힌 개수</span></div>
+    <div class="stat"><b id="wrong">0</b><span>틀린 개수</span></div>
+  </div>
+  <div class="progress" aria-label="정답률"><div id="progressBar"></div></div>
+  <p class="note">정답을 맞히면 잠시 후 새 문제가 나와요. 계속 도전해 보세요!</p>
+</section>
+</main>
+</div>
+<div class="confetti" id="confetti"></div>
+<script>
+const NS="http://www.w3.org/2000/svg";
+const ticks=document.getElementById("ticks"), numbers=document.getElementById("numbers");
+for(let i=0;i<60;i++){
+  const a=i*Math.PI/30, major=i%5===0;
+  const r1=major?143:149, r2=157;
+  const line=document.createElementNS(NS,"line");
+  line.setAttribute("x1",180+r1*Math.sin(a));line.setAttribute("y1",180-r1*Math.cos(a));
+  line.setAttribute("x2",180+r2*Math.sin(a));line.setAttribute("y2",180-r2*Math.cos(a));
+  line.setAttribute("class",major?"tick major":"tick");ticks.appendChild(line);
+}
+for(let n=1;n<=12;n++){
+  const a=n*Math.PI/6, t=document.createElementNS(NS,"text");
+  t.setAttribute("x",180+119*Math.sin(a));t.setAttribute("y",180-119*Math.cos(a));
+  t.setAttribute("class","clock-number");t.textContent=n;numbers.appendChild(t);
+}
+let level=1, hour=3, minute=0, answered=false, total=0, correct=0, wrong=0;
+const $=id=>document.getElementById(id);
+function hand(id,angle,length){
+  const rad=angle*Math.PI/180;
+  $(id).setAttribute("x2",180+length*Math.sin(rad));
+  $(id).setAttribute("y2",180-length*Math.cos(rad));
+}
+function drawClock(){
+  hand("minuteHand",minute*6,112);
+  hand("hourHand",((hour%12)+minute/60)*30,77);
+}
+function randomQuestion(){
+  if(level===1){hour=1+Math.floor(Math.random()*12);minute=0;}
+  else if(level===2){hour=1+Math.floor(Math.random()*12);minute=Math.random()<.5?0:30;}
+  else if(level===3){hour=1+Math.floor(Math.random()*12);minute=Math.floor(Math.random()*12)*5;}
+  else {hour=1+Math.floor(Math.random()*12);minute=Math.floor(Math.random()*60);}
+  answered=false;$("hours").value="";$("minutes").value="";
+  $("feedback").className="feedback";$("feedback").textContent="시계 바늘을 잘 살펴보고 답을 입력해 보세요. 😊";
+  drawClock();
+}
+function updateStats(){
+  $("total").textContent=total;$("correct").textContent=correct;$("wrong").textContent=wrong;
+  $("progressBar").style.width=(total?correct/total*100:0)+"%";
+}
+function showConfetti(){
+  const box=$("confetti");box.innerHTML="";
+  const colors=["#5277e8","#ff7898","#ffc857","#39b98a","#a78bfa"];
+  for(let i=0;i<55;i++){
+    const bit=document.createElement("i");bit.style.left=Math.random()*100+"%";
+    bit.style.background=colors[i%colors.length];bit.style.animationDelay=Math.random()*.25+"s";
+    bit.style.transform=`rotate(${Math.random()*180}deg)`;box.appendChild(bit);
+  }
+  setTimeout(()=>box.innerHTML="",1600);
+}
+function checkAnswer(){
+  if(answered)return;
+  const h=$("hours").value.trim(),m=$("minutes").value.trim();
+  if(h===""||m===""){$("feedback").className="feedback bad";$("feedback").innerHTML="<strong>시와 분을 모두 입력해 주세요!</strong>숫자를 넣고 다시 확인해 봐요.";return;}
+  const hh=Number(h),mm=Number(m);
+  if(!Number.isInteger(hh)||!Number.isInteger(mm)||hh<1||hh>12||mm<0||mm>59){
+    $("feedback").className="feedback bad";$("feedback").innerHTML="<strong>입력한 숫자를 확인해요.</strong>시는 1~12, 분은 0~59 사이예요.";return;
+  }
+  answered=true;total++;
+  if(hh===hour&&mm===minute){
+    correct++;$("feedback").className="feedback good";
+    $("feedback").innerHTML="<strong>🎉 정답이에요! 참 잘했어요!</strong>시침과 분침의 위치를 정확하게 읽었어요.";
+    showConfetti();updateStats();setTimeout(randomQuestion,1500);
+  }else{
+    wrong++;$("feedback").className="feedback bad";
+    const minText=String(minute).padStart(2,"0");
+    let hint=minute===0?"분침이 12를 가리키면 0분이에요.":minute===30?"분침이 6을 가리키면 30분이에요.":`분침이 가리키는 숫자에 5를 곱하면 분을 알 수 있어요.`;
+    if(level===4)hint="작은 눈금 하나는 1분이에요. 분침이 몇 번째 눈금에 있는지 세어 보세요.";
+    $("feedback").innerHTML=`<strong>아쉽지만 괜찮아요! 정답은 ${hour}시 ${minText}분이에요.</strong>${hint} 짧은 시침은 분이 지날수록 다음 숫자 쪽으로 조금씩 움직여요.`;
+    updateStats();
+  }
+}
+document.querySelectorAll(".level").forEach(btn=>btn.addEventListener("click",()=>{
+  level=Number(btn.dataset.level);
+  document.querySelectorAll(".level").forEach(b=>b.classList.toggle("active",b===btn));
+  randomQuestion();
+}));
+$("checkBtn").addEventListener("click",checkAnswer);
+$("nextBtn").addEventListener("click",randomQuestion);
+["hours","minutes"].forEach(id=>$(id).addEventListener("keydown",e=>{if(e.key==="Enter")checkAnswer();}));
+drawClock();randomQuestion();updateStats();
+</script>
+</body>
+</html>
