@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>제미나이 AI 캐치마인드</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Poor Story for friendly comic/handwritten educational feel & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans KR', 'sans-serif'],
+                        comic: ['Gaegu', 'cursive']
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            yellow: '#facc15',
+                            pink: '#f472b6',
+                            purple: '#a855f7'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Base Styling & Canvas Protection */
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .font-comic-style {
+            font-family: 'Gaegu', cursive;
+        }
+
+        /* Responsive Canvas Styling */
+        #drawCanvas {
+            touch-action: none; /* Prevents scrolling while drawing on mobile */
+            cursor: crosshair;
+            background-color: #ffffff;
+        }
+
+        /* Custom Bounce Animation for Thinking State */
+        @keyframes customPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        .pulse-anim {
+            animation: customPulse 1.8s infinite ease-in-out;
+        }
+
+        /* Shiny Glass Card Effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 3px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-amber-100 via-sky-100 to-indigo-100 min-h-screen flex flex-col justify-between text-slate-800">
+
+    <!-- Header / Navbar -->
+    <header class="w-full bg-white/80 backdrop-blur-md shadow-sm border-b border-sky-100 px-4 py-3 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="resetToHome()">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-500 flex items-center justify-center text-white shadow-md text-xl">
+                    ✏️
+                </div>
+                <h1 class="text-2xl font-black font-comic-style tracking-wider text-slate-800">
+                    AI 캐치마인드 <span class="text-xs font-sans px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 font-bold ml-1">Vision AI</span>
+                </h1>
+            </div>
+            
+            <!-- API Key Status / Configuration Modal Button -->
+            <button id="apiKeyBtn" onclick="toggleApiKeyModal()" class="text-xs px-3 py-1.5 rounded-full border border-slate-300 hover:border-sky-400 bg-white text-slate-600 transition flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-key text-amber-500"></i>
+                <span id="apiKeyStatusText">API 키 설정</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-4xl w-full mx-auto p-4 flex-1 flex flex-col justify-center items-center">
+
+        <!-- ==================== SCREEN 1: START SCREEN ==================== -->
+        <section id="startScreen" class="w-full flex flex-col items-center space-y-6 my-auto py-6">
+            <div class="text-center space-y-2">
+                <span class="inline-block px-4 py-1.5 rounded-full bg-amber-200 text-amber-900 text-sm font-bold shadow-sm">
+                    🎨 AI 와 함께하는 창의 그림 퀴즈
+                </span>
+                <h2 class="text-4xl md:text-5xl font-black font-comic-style text-slate-800 tracking-wide">
+                    그림을 그리고 AI의 정답을 기다려보세요!
+                </h2>
+                <p class="text-slate-600 max-w-md mx-auto text-sm md:text-base">
+                    선택한 카테고리의 제시어를 보고 제한시간 60초 내에 그림을 그려주세요. 제미나이 AI가 여러분의 그림을 맞혀봅니다!
+                </p>
+            </div>
+
+            <!-- Category Selector Box -->
+            <div class="w-full max-w-2xl glass-card rounded-3xl p-6 shadow-xl space-y-4">
+                <h3 class="text-lg font-bold text-slate-700 flex items-center gap-2">
+                    <i class="fa-solid fa-shapes text-sky-500"></i> 카테고리를 선택하세요
+                </h3>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3" id="categoryContainer">
+                    <!-- Dynamic Category Buttons populated via JS -->
+                </div>
+            </div>
+
+            <!-- Start Game Action Button -->
+            <button id="startGameBtn" onclick="startGame()" disabled class="w-full max-w-xs py-4 rounded-2xl bg-slate-300 text-slate-500 text-xl font-bold font-comic-style tracking-wider cursor-not-allowed transition transform active:scale-95 shadow-lg flex items-center justify-center gap-2">
+                <i class="fa-solid fa-play"></i> 게임 시작하기
+            </button>
+        </section>
+
+
+        <!-- ==================== SCREEN 2: GAME CANVAS SCREEN ==================== -->
+        <section id="gameScreen" class="w-full hidden flex-col items-center space-y-4">
+            
+            <!-- Prompt & Timer Dashboard -->
+            <div class="w-full glass-card rounded-2xl p-4 shadow-md flex flex-wrap justify-between items-center gap-3">
+                <!-- Word Prompt -->
+                <div class="flex items-center gap-3">
+                    <span id="selectedCategoryBadge" class="px-3 py-1 rounded-lg bg-sky-100 text-sky-800 font-bold text-xs">동물</span>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-xs text-slate-400 font-bold">제시어:</span>
+                        <span id="targetWordText" class="text-2xl font-black text-sky-600 font-comic-style">강아지</span>
+                    </div>
+                </div>
+
+                <!-- Timer Bar -->
+                <div class="flex items-center gap-3 min-w-[180px] flex-1 sm:flex-none justify-end">
+                    <i class="fa-solid fa-clock text-amber-500 text-xl"></i>
+                    <div class="w-32 bg-slate-200 h-4 rounded-full overflow-hidden relative">
+                        <div id="timerProgress" class="bg-gradient-to-r from-amber-400 to-red-500 h-full w-full transition-all duration-1000 ease-linear"></div>
+                    </div>
+                    <span id="timerText" class="font-bold text-lg text-slate-700 w-8 text-right">60</span>s
+                </div>
+            </div>
+
+            <!-- Main Interactive Canvas Card -->
+            <div class="w-full glass-card rounded-3xl p-3 sm:p-4 shadow-xl flex flex-col items-center space-y-3 relative">
+                
+                <!-- Canvas Wrapper with Dynamic Width -->
+                <div class="w-full max-w-2xl aspect-[4/3] rounded-2xl overflow-hidden border-2 border-slate-200 relative bg-white shadow-inner">
+                    <canvas id="drawCanvas" class="w-full h-full block"></canvas>
+
+                    <!-- Lock Overlay (Active when submitting/timer ended) -->
+                    <div id="canvasLockOverlay" class="absolute inset-0 bg-slate-900/20 backdrop-blur-[1px] hidden flex-col items-center justify-center text-white font-bold text-lg">
+                        <i class="fa-solid fa-lock text-3xl mb-2"></i>
+                        <span>그림 그리기 완료</span>
+                    </div>
+                </div>
+
+                <!-- Toolbar (Tools, Colors, Widths) -->
+                <div class="w-full max-w-2xl bg-slate-100 p-2 sm:p-3 rounded-2xl flex flex-wrap justify-between items-center gap-2">
+                    
+                    <!-- Color Palette -->
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <button onclick="setBrushColor('#000000')" class="color-btn w-7 h-7 rounded-full bg-black border-2 border-white ring-2 ring-transparent transition transform hover:scale-110 active:scale-95" data-color="#000000"></button>
+                        <button onclick="setBrushColor('#ef4444')" class="color-btn w-7 h-7 rounded-full bg-red-500 border-2 border-white ring-2 ring-transparent transition transform hover:scale-110 active:scale-95" data-color="#ef4444"></button>
+                        <button onclick="setBrushColor('#f97316')" class="color-btn w-7 h-7 rounded-full bg-orange-500 border-2 border-white ring-2 ring-transparent transition transform hover:scale-110 active:scale-95" data-color="#f97316"></button>
+                        <button onclick="setBrushColor('#eab308')" class="color-btn w-7 h-7 rounded-full bg-yellow-500 border-2 border-white ring-2 ring-transparent transition transform hover:scale-110 active:scale-95" data-color="#eab308"></button>
+                        <button onclick="setBrushColor('#22c55e')" class="color-btn w-7 h-7 rounded-full bg-green-500 border-2 border-white ring-2 ring-transparent transition transform hover:scale-110 active:scale-95" data-color="#22c55e"></button>
+                        <button onclick="setBrushColor('#3b82f6')" class="color-btn w-7 h-7 rounded-full bg-blue-500 border-2 border-white ring-2 ring-transparent transition transform hover:scale-110 active:scale-95" data-color="#3b82f6"></button>
+                        <button onclick="setBrushColor('#a855f7')" class="color-btn w-7 h-7 rounded-full bg-purple-500 border-2 border-white ring-2 ring-transparent transition transform hover:scale-110 active:scale-95" data-color="#a855f7"></button>
+                        <button onclick="setBrushColor('#78350f')" class="color-btn w-7 h-7 rounded-full bg-amber-900 border-2 border-white ring-2 ring-transparent transition transform hover:scale-110 active:scale-95" data-color="#78350f"></button>
+                        
+                        <!-- Color Picker Input -->
+                        <label class="w-7 h-7 rounded-full overflow-hidden border-2 border-white ring-2 ring-slate-300 cursor-pointer relative bg-gradient-to-tr from-pink-400 via-amber-300 to-cyan-400">
+                            <input type="color" id="customColorPicker" onchange="setBrushColor(this.value)" class="opacity-0 absolute inset-0 w-full h-full cursor-pointer">
+                        </label>
+                    </div>
+
+                    <!-- Line Thickness & Eraser -->
+                    <div class="flex items-center gap-2">
+                        <!-- Eraser Toggle -->
+                        <button id="eraserBtn" onclick="toggleEraser()" class="p-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-sm text-xs font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-eraser"></i> 지우개
+                        </button>
+
+                        <!-- Thickness Slider -->
+                        <div class="flex items-center gap-1 bg-white border border-slate-200 px-2 py-1 rounded-xl shadow-sm">
+                            <i class="fa-solid fa-circle text-[8px] text-slate-400"></i>
+                            <input type="range" id="lineWidthSlider" min="2" max="30" value="6" oninput="setLineWidth(this.value)" class="w-16 accent-sky-500">
+                            <i class="fa-solid fa-circle text-sm text-slate-400"></i>
+                        </div>
+
+                        <!-- Undo Button -->
+                        <button onclick="undoCanvas()" class="p-2 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition shadow-sm text-xs font-bold" title="되돌리기">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
+
+                        <!-- Clear Canvas Button -->
+                        <button onclick="clearCanvas()" class="p-2 rounded-xl bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition shadow-sm text-xs font-bold" title="전체 지우기">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Action Button -->
+                <div class="w-full flex justify-end pt-2">
+                    <button id="submitDrawingBtn" onclick="submitDrawing()" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-bold text-lg shadow-lg hover:shadow-xl transition transform active:scale-95 flex items-center gap-2">
+                        <span>AI에게 제출하기</span>
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== SCREEN 3: LOADING/THINKING STATE ==================== -->
+        <section id="thinkingScreen" class="w-full hidden flex-col items-center justify-center my-auto py-12 space-y-6">
+            <div class="glass-card rounded-3xl p-8 sm:p-12 shadow-2xl flex flex-col items-center space-y-6 max-w-md w-full pulse-anim text-center">
+                
+                <div class="relative w-28 h-28 flex items-center justify-center">
+                    <div class="absolute inset-0 rounded-full bg-sky-200 animate-ping opacity-75"></div>
+                    <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-sky-400 to-indigo-500 flex items-center justify-center text-white text-5xl shadow-lg z-10">
+                        🤖
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="text-2xl font-black font-comic-style text-slate-800 tracking-wide">
+                        AI가 그림을 분석하고 있습니다...
+                    </h3>
+                    <p class="text-slate-500 text-sm">
+                        과연 어떤 답을 생각해냈을까요? 잠시만 기다려주세요!
+                    </p>
+                </div>
+
+                <!-- Bouncing Dots Indicator -->
+                <div class="flex items-center justify-center space-x-2 pt-2">
+                    <div class="w-3 h-3 bg-sky-500 rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+                    <div class="w-3 h-3 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+                    <div class="w-3 h-3 bg-pink-500 rounded-full animate-bounce" style="animation-delay: 0.4s;"></div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ==================== SCREEN 4: RESULT SCREEN ==================== -->
+        <section id="resultScreen" class="w-full hidden flex-col items-center space-y-6 my-auto py-6">
+            
+            <!-- Result Badge Header -->
+            <div id="resultBadge" class="px-6 py-3 rounded-full text-2xl font-black font-comic-style tracking-wider shadow-lg flex items-center gap-2 animate-bounce">
+                <!-- Result status icon and text injected by JS -->
+            </div>
+
+            <div class="w-full max-w-2xl glass-card rounded-3xl p-6 shadow-xl space-y-6">
+                
+                <!-- Comparison Grid: User Image vs AI & Target -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    
+                    <!-- Left: User's Drawn Snapshot -->
+                    <div class="flex flex-col items-center space-y-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">내가 그린 그림</span>
+                        <div class="w-full aspect-[4/3] rounded-2xl overflow-hidden border-2 border-slate-200 bg-white shadow-md p-1">
+                            <img id="resultSnapshot" src="" alt="User Drawing" class="w-full h-full object-contain rounded-xl">
+                        </div>
+                    </div>
+
+                    <!-- Right: AI Guess & Correct Answer -->
+                    <div class="flex flex-col space-y-4 justify-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        
+                        <!-- Target Word -->
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-white border border-slate-200 shadow-sm">
+                            <span class="text-xs font-bold text-slate-500">실제 정답</span>
+                            <span id="resultTargetWord" class="text-xl font-black text-emerald-600 font-comic-style">강아지</span>
+                        </div>
+
+                        <!-- AI Guessed Word -->
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-white border border-slate-200 shadow-sm">
+                            <span class="text-xs font-bold text-slate-500">AI 추측 응답</span>
+                            <span id="resultAiGuess" class="text-xl font-black text-sky-600 font-comic-style">강아지</span>
+                        </div>
+
+                        <!-- Category Info -->
+                        <div class="text-xs text-slate-400 text-center pt-1">
+                            카테고리: <span id="resultCategoryText" class="font-bold text-slate-600">동물</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-center gap-4 pt-2">
+                    <button onclick="resetToHome()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-lg shadow-lg hover:shadow-xl transition transform active:scale-95 flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> 다시 하기
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-4 text-xs text-slate-500 font-medium border-t border-slate-200/50 bg-white/40">
+        제미나이 Vision AI 기반 캐치마인드 교육용 웹 애플리케이션
+    </footer>
+
+    <!-- ==================== API KEY CONFIGURATION MODAL ==================== -->
+    <div id="apiKeyModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-key text-amber-500"></i> Gemini API 키 설정
+                </h3>
+                <button onclick="toggleApiKeyModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">
+                    &times;
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Gemini Vision API를 호출하기 위해 API 키가 필요합니다. 입력된 키는 사용자의 브라우저(LocalStorage)에만 안전하게 보관됩니다.
+            </p>
+
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-slate-700">API Key</label>
+                <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="w-full p-3 rounded-xl border border-slate-300 focus:outline-none focus:border-sky-500 text-sm">
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="saveApiKey()" class="w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm shadow-md transition">
+                    저장하기
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ==================== JAVASCRIPT GAME LOGIC ==================== -->
+    <script>
+        // -------------------------------------------------------------
+        // 1. DATA DEFINITIONS & WORD BANK
+        // -------------------------------------------------------------
+        const WORD_BANKS = {
+            동물: ['강아지', '고양이', '사자', '호랑이', '코끼리', '토끼', '기린', '펭귄'],
+            과일: ['사과', '바나나', '수박', '딸기', '포도', '귤', '복숭아', '파인애플'],
+            채소: ['당근', '브로콜리', '오이', '토마토', '감자', '고구마', '양파', '호박'],
+            사물: ['시계', '안경', '연필', '모자', '가방', '우산', '스마트폰', '의자'],
+            교통수단: ['비행기', '자동차', '자전거', '기차', '버스를', '배', '헬리콥터', '오토바이']
+        };
+
+        const CATEGORY_ICONS = {
+            동물: '🐶',
+            과일: '🍎',
+            채소: '🥦',
+            사물: '🎒',
+            교통수단: '🚗'
+        };
+
+        // State Variables
+        let selectedCategory = null;
+        let targetWord = '';
+        let timerInterval = null;
+        let timeLeft = 60;
+        let isDrawing = false;
+        let isEraserMode = false;
+        let currentBrushColor = '#000000';
+        let currentLineWidth = 6;
+        let undoHistory = [];
+
+        // Canvas & API References
+        let canvas, ctx;
+        let apiKey = '';
+
+        // -------------------------------------------------------------
+        // 2. INITIALIZATION & LIFECYCLE
+        // -------------------------------------------------------------
+        window.onload = function () {
+            initApiKey();
+            renderCategories();
+            setupCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        };
+
+        // API Key handling
+        function initApiKey() {
+            // First check if environment variable exists or saved local storage key exists
+            const savedKey = localStorage.getItem('GEMINI_API_KEY');
+            if (savedKey) {
+                apiKey = savedKey;
+                document.getElementById('apiKeyInput').value = savedKey;
+                updateApiKeyStatus(true);
+            } else {
+                updateApiKeyStatus(false);
+            }
+        }
+
+        function updateApiKeyStatus(hasKey) {
+            const statusText = document.getElementById('apiKeyStatusText');
+            if (hasKey) {
+                statusText.innerText = 'API 키 등록됨';
+                statusText.classList.add('text-emerald-600', 'font-bold');
+            } else {
+                statusText.innerText = 'API 키 입력';
+                statusText.classList.remove('text-emerald-600', 'font-bold');
+            }
+        }
+
+        function saveApiKey() {
+            const inputVal = document.getElementById('apiKeyInput').value.trim();
+            if (inputVal) {
+                apiKey = inputVal;
+                localStorage.setItem('GEMINI_API_KEY', inputVal);
+                updateApiKeyStatus(true);
+                toggleApiKeyModal();
+            } else {
+                localStorage.removeItem('GEMINI_API_KEY');
+                apiKey = '';
+                updateApiKeyStatus(false);
+                toggleApiKeyModal();
+            }
+        }
+
+        function toggleApiKeyModal() {
+            const modal = document.getElementById('apiKeyModal');
+            modal.classList.toggle('hidden');
+        }
+
+        // -------------------------------------------------------------
+        // 3. CATEGORY SELECTION & SCREEN MANAGEMENT
+        // -------------------------------------------------------------
+        function renderCategories() {
+            const container = document.getElementById('categoryContainer');
+            container.innerHTML = '';
+
+            Object.keys(WORD_BANKS).forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `cat-btn p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-sky-400 hover:bg-sky-50 transition flex flex-col items-center justify-center space-y-2 cursor-pointer shadow-sm`;
+                btn.onclick = () => selectCategory(cat, btn);
+
+                btn.innerHTML = `
+                    <span class="text-3xl">${CATEGORY_ICONS[cat]}</span>
+                    <span class="font-bold text-sm text-slate-700">${cat}</span>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function selectCategory(cat, btnElement) {
+            selectedCategory = cat;
+
+            // Highlight selected category button UI
+            document.querySelectorAll('.cat-btn').forEach(b => {
+                b.classList.remove('border-sky-500', 'bg-sky-100', 'ring-2', 'ring-sky-400');
+                b.classList.add('border-slate-200', 'bg-white');
+            });
+
+            btnElement.classList.remove('border-slate-200', 'bg-white');
+            btnElement.classList.add('border-sky-500', 'bg-sky-100', 'ring-2', 'ring-sky-400');
+
+            // Enable start button
+            const startBtn = document.getElementById('startGameBtn');
+            startBtn.disabled = false;
+            startBtn.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+            startBtn.classList.add('bg-gradient-to-r', 'from-amber-400', 'to-orange-500', 'text-white', 'hover:shadow-xl');
+        }
+
+        function showScreen(screenId) {
+            const screens = ['startScreen', 'gameScreen', 'thinkingScreen', 'resultScreen'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (id === screenId) {
+                    el.classList.remove('hidden');
+                    el.classList.add('flex');
+                } else {
+                    el.classList.add('hidden');
+                    el.classList.remove('flex');
+                }
+            });
+        }
+
+        function resetToHome() {
+            clearInterval(timerInterval);
+            selectedCategory = null;
+            targetWord = '';
+            showScreen('startScreen');
+            renderCategories();
+
+            const startBtn = document.getElementById('startGameBtn');
+            startBtn.disabled = true;
+            startBtn.className = "w-full max-w-xs py-4 rounded-2xl bg-slate-300 text-slate-500 text-xl font-bold font-comic-style tracking-wider cursor-not-allowed transition transform active:scale-95 shadow-lg flex items-center justify-center gap-2";
+        }
+
+        // -------------------------------------------------------------
+        // 4. GAMEFLOW & TIMER LOGIC
+        // -------------------------------------------------------------
+        function startGame() {
+            if (!selectedCategory) return;
+
+            // Select random target word from category
+            const bank = WORD_BANKS[selectedCategory];
+            targetWord = bank[Math.floor(Math.random() * bank.length)];
+
+            // Set UI details
+            document.getElementById('selectedCategoryBadge').innerText = selectedCategory;
+            document.getElementById('targetWordText').innerText = targetWord;
+            document.getElementById('canvasLockOverlay').classList.add('hidden');
+
+            showScreen('gameScreen');
+
+            // Reset canvas
+            setTimeout(() => {
+                resizeCanvas();
+                clearCanvas();
+            }, 50);
+
+            // Start Timer
+            startTimer();
+        }
+
+        function startTimer() {
+            timeLeft = 60;
+            updateTimerUI();
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerUI();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    lockAndSubmit();
+                }
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            document.getElementById('timerText').innerText = timeLeft;
+            const progressPercent = (timeLeft / 60) * 100;
+            document.getElementById('timerProgress').style.width = `${progressPercent}%`;
+        }
+
+        function lockAndSubmit() {
+            clearInterval(timerInterval);
+            document.getElementById('canvasLockOverlay').classList.remove('hidden');
+            submitDrawing();
+        }
+
+        // -------------------------------------------------------------
+        // 5. CANVAS DRAWING LOGIC (TOUCH & MOUSE SUPPORT)
+        // -------------------------------------------------------------
+        function setupCanvas() {
+            canvas = document.getElementById('drawCanvas');
+            ctx = canvas.getContext('2d');
+
+            // Set line caps
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Desktop Mouse Events
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+
+            // Mobile/Tablet Touch Events
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+            canvas.addEventListener('touchend', stopDrawing, { passive: false });
+
+            // Default Color Select UI
+            setBrushColor('#000000');
+        }
+
+        function resizeCanvas() {
+            if (!canvas) return;
+            const container = canvas.parentElement;
+            
+            // Save current drawing content
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(canvas, 0, 0);
+
+            // Set high DPR canvas size
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            // Fill background white
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Restore previous content resized
+            if (tempCanvas.width > 0 && tempCanvas.height > 0) {
+                ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+            }
+
+            // Restore context settings
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+        }
+
+        function saveState() {
+            if (undoHistory.length > 10) undoHistory.shift();
+            undoHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        }
+
+        function undoCanvas() {
+            if (undoHistory.length > 0) {
+                const previousState = undoHistory.pop();
+                ctx.putImageData(previousState, 0, 0);
+            }
+        }
+
+        function clearCanvas() {
+            saveState();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function setBrushColor(color) {
+            isEraserMode = false;
+            currentBrushColor = color;
+            document.getElementById('eraserBtn').classList.remove('bg-sky-100', 'border-sky-400', 'text-sky-700');
+            
+            // Highlight color button UI
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                if (btn.getAttribute('data-color') === color) {
+                    btn.classList.add('ring-sky-500', 'scale-110');
+                } else {
+                    btn.classList.remove('ring-sky-500', 'scale-110');
+                }
+            });
+        }
+
+        function setLineWidth(val) {
+            currentLineWidth = val;
+        }
+
+        function toggleEraser() {
+            isEraserMode = !isEraserMode;
+            const eraserBtn = document.getElementById('eraserBtn');
+
+            if (isEraserMode) {
+                eraserBtn.classList.add('bg-sky-100', 'border-sky-400', 'text-sky-700');
+                document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('ring-sky-500', 'scale-110'));
+            } else {
+                eraserBtn.classList.remove('bg-sky-100', 'border-sky-400', 'text-sky-700');
+                setBrushColor(currentBrushColor);
+            }
+        }
+
+        function getCanvasCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function startDrawing(e) {
+            saveState();
+            isDrawing = true;
+            const pos = getCanvasCoordinates(e);
+
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+
+            ctx.strokeStyle = isEraserMode ? '#ffffff' : currentBrushColor;
+            ctx.lineWidth = currentLineWidth;
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getCanvasCoordinates(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                ctx.closePath();
+                isDrawing = false;
+            }
+        }
+
+        // Touch event handlers
+        function handleTouchStart(e) {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                startDrawing(touch);
+            }
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                draw(touch);
+            }
+        }
+
+
+        // -------------------------------------------------------------
+        // 6. GEMINI VISION API INTEGRATION
+        // -------------------------------------------------------------
+        async function submitDrawing() {
+            clearInterval(timerInterval);
+
+            // Check for API Key presence
+            if (!apiKey) {
+                toggleApiKeyModal();
+                alert('Gemini API 키를 먼저 설정해 주세요.');
+                return;
+            }
+
+            // Capture Snapshot Image Data (PNG Base64)
+            const snapshotDataUrl = canvas.toDataURL('image/png');
+            const base64Data = snapshotDataUrl.split(',')[1];
+
+            // Switch UI to Loading/Thinking screen
+            showScreen('thinkingScreen');
+
+            try {
+                // Call Gemini Vision API using gemini-3-flash-preview
+                const aiResponse = await callGeminiVisionApi(base64Data, selectedCategory);
+                
+                // Show Result Screen
+                showResults(snapshotDataUrl, aiResponse);
+            } catch (err) {
+                console.error("Gemini API Error:", err);
+                alert("AI 응답을 가져오는 도중 오류가 발생했습니다. API 키를 확인해 주세요.");
+                showScreen('gameScreen');
+            }
+        }
+
+        async function callGeminiVisionApi(base64ImageData, category) {
+            // Build prompt: Strictly pass ONLY category, NOT the target word.
+            const systemInstructionText = "당신은 캐치마인드 그림 퀴즈 출제자입니다. 제시된 그림과 카테고리를 분석하여 정답 명사 단어 한 개만 정확히 추측하세요.";
+            const userPromptText = `이 그림은 '${category}' 카테고리에 속한 그림입니다. 이 그림이 무엇인지 추측해서 반드시 **한국어 명사 단어 하나**로만 대답하세요. 부연 설명, 개행, 문자, 특수문자 없이 오직 단어 이름만 출력하세요. (예: 강아지)`;
+
+            const payload = {
+                contents: [
+                    {
+                        role: "user",
+                        parts: [
+                            { text: userPromptText },
+                            {
+                                inlineData: {
+                                    mimeType: "image/png",
+                                    data: base64ImageData
+                                }
+                            }
+                        ]
+                    }
+                ],
+                systemInstruction: {
+                    parts: [{ text: systemInstructionText }]
+                }
+            };
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+            let guessedWord = candidate?.content?.parts?.[0]?.text || '';
+            
+            // Clean response text (remove spaces, punctuation, quotes)
+            guessedWord = guessedWord.trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()"'`]/g, "");
+
+            return guessedWord;
+        }
+
+        // -------------------------------------------------------------
+        // 7. RESULT PROCESSING & COMPARISON
+        // -------------------------------------------------------------
+        function showResults(snapshotUrl, aiGuess) {
+            document.getElementById('resultSnapshot').src = snapshotUrl;
+            document.getElementById('resultTargetWord').innerText = targetWord;
+            document.getElementById('resultAiGuess').innerText = aiGuess || '응답 없음';
+            document.getElementById('resultCategoryText').innerText = selectedCategory;
+
+            // Normalized Comparison
+            const normalizedTarget = targetWord.trim().replace(/\s+/g, '');
+            const normalizedGuess = aiGuess.trim().replace(/\s+/g, '');
+
+            const isCorrect = normalizedGuess.includes(normalizedTarget) || normalizedTarget.includes(normalizedGuess);
+            
+            const badge = document.getElementById('resultBadge');
+
+            if (isCorrect) {
+                badge.className = "px-6 py-3 rounded-full text-2xl font-black font-comic-style tracking-wider shadow-lg flex items-center gap-2 animate-bounce bg-emerald-500 text-white";
+                badge.innerHTML = `<span>정답입니다! 🎉</span>`;
+            } else {
+                badge.className = "px-6 py-3 rounded-full text-2xl font-black font-comic-style tracking-wider shadow-lg flex items-center gap-2 animate-bounce bg-rose-500 text-white";
+                badge.innerHTML = `<span>아쉬워요! 😅</span>`;
+            }
+
+            showScreen('resultScreen');
+        }
+    </script>
+</body>
+</html>
