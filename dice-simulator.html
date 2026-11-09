@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3D 주사위 시뮬레이터 · 확률통계 실험실</title>
+<style>
+:root{
+  --bg:#f3f1ea; --card:#ffffff; --ink:#1d2a2a; --muted:#6a7472; --line:#e3ded2;
+  --accent:#1f6f5c; --accent-d:#15523f; --red:#d6453a;
+  --ok:#17803f; --okbg:#e4f5ea; --warn:#c0392b; --warnbg:#fdeceb; --pend:#6a7472; --pendbg:#eeeee8;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif;
+  line-height:1.5; -webkit-text-size-adjust:100%;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.wrap{max-width:1180px; margin:0 auto; padding:18px 16px 40px}
+header.top{margin-bottom:16px}
+h1{margin:0; font-size:clamp(22px,4vw,30px); letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.sub{margin:6px 0 0; color:var(--muted); font-size:14.5px}
+h2{margin:0 0 12px; font-size:16px; display:flex; align-items:center; gap:8px}
+h2 small{font-weight:400; color:var(--muted); font-size:12.5px}
+.layout{display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:16px; align-items:start}
+.col{display:flex; flex-direction:column; gap:16px; min-width:0}
+.card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow:0 1px 2px rgba(0,0,0,.03)}
+
+/* 3D stage */
+.stage{
+  position:relative; width:100%; aspect-ratio:4/3; border-radius:14px; overflow:hidden;
+  background:radial-gradient(ellipse at 50% 40%, #2f8a70 0%, #1f6f5c 55%, #134a3c 100%);
+  touch-action:manipulation;
+}
+.stage canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+.badge{
+  position:absolute; top:10px; left:10px; background:rgba(255,255,255,.92); border-radius:12px;
+  padding:6px 12px; font-size:13px; color:var(--muted); display:flex; align-items:baseline; gap:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,.15);
+}
+.badge b{font-size:26px; color:var(--ink); line-height:1; min-width:1ch; text-align:center; font-variant-numeric:tabular-nums}
+.stage-msg{position:absolute; inset:0; display:none; align-items:center; justify-content:center; text-align:center; color:#fff; padding:24px; font-size:15px}
+
+/* controls */
+.btns{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+button{font:inherit; cursor:pointer}
+.btn{
+  min-height:46px; border-radius:12px; border:1.5px solid var(--accent); background:var(--accent); color:#fff;
+  font-weight:700; font-size:15px; padding:0 12px; transition:background .15s, transform .05s, opacity .15s;
+}
+.btn:hover:not(:disabled){background:var(--accent-d)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
+.btn.ghost{background:#fff; color:var(--accent)}
+.btn.ghost:hover:not(:disabled){background:#eaf4f0}
+.btn.reset{background:#fff; color:var(--red); border-color:var(--red)}
+.btn.reset:hover:not(:disabled){background:#fdeceb}
+.row2{display:grid; grid-template-columns:1fr auto; gap:10px; margin-top:10px}
+.custom{display:flex; gap:8px; min-width:0}
+.custom input{
+  flex:1; min-width:0; height:46px; border:1.5px solid var(--line); border-radius:12px; padding:0 12px;
+  font:inherit; font-size:16px; background:#fff; color:var(--ink); font-variant-numeric:tabular-nums;
+}
+.custom input:focus{outline:2px solid #9fd0c3; border-color:var(--accent)}
+.prog{height:6px; border-radius:99px; background:#ece8dc; margin-top:14px; overflow:hidden}
+.prog i{display:block; height:100%; width:0; background:var(--accent); transition:width .12s linear}
+.status{margin:8px 0 0; font-size:13.5px; color:var(--muted); min-height:1.4em}
+.hist-title{margin:16px 0 8px; font-size:13px; color:var(--muted)}
+.hist{display:flex; flex-wrap:wrap; gap:5px; min-height:28px}
+.chip{
+  width:26px; height:26px; border-radius:7px; background:#faf8f1; border:1px solid var(--line);
+  display:inline-flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; font-variant-numeric:tabular-nums;
+}
+.chip:last-child{background:var(--accent); color:#fff; border-color:var(--accent)}
+.empty{color:var(--muted); font-size:13px}
+
+/* table */
+table{width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:14.5px}
+th,td{padding:8px 6px; text-align:right; border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:center}
+thead th{font-size:12.5px; color:var(--muted); font-weight:600; background:#faf8f1; position:sticky; top:0}
+tfoot td{font-weight:800; border-bottom:0; background:#faf8f1}
+.face{display:inline-flex; width:26px; height:26px; border-radius:7px; background:#fffdf6; border:1.5px solid #cfc9b8; align-items:center; justify-content:center; font-weight:800; font-size:14px}
+.face.one{color:var(--red)}
+.pos{color:#1b7a5a}.neg{color:#b5502f}
+.tbl-wrap{overflow-x:auto}
+
+/* chart */
+.chart{position:relative; padding-left:38px; padding-right:2px; padding-top:22px}
+.plot{position:relative; height:250px; border-left:2px solid #b9b4a4; border-bottom:2px solid #b9b4a4}
+.grid{position:absolute; left:0; right:0; border-top:1px dashed #e3ded2; pointer-events:none}
+.grid span{position:absolute; left:-38px; width:32px; text-align:right; top:-9px; font-size:11px; color:var(--muted); font-variant-numeric:tabular-nums}
+.bars{position:absolute; inset:0; display:flex; align-items:stretch}
+.bcol{flex:1; position:relative}
+.bar{
+  position:absolute; bottom:0; left:14%; right:14%; height:0; background:linear-gradient(#2b9a80,#1f6f5c);
+  border-radius:6px 6px 0 0; transition:height .22s ease-out;
+}
+.bar .v{position:absolute; left:50%; transform:translateX(-50%); bottom:100%; padding-bottom:3px; font-size:11.5px; font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums}
+.theo{position:absolute; left:0; right:0; border-top:2px dashed var(--red); pointer-events:none; z-index:2; transition:bottom .22s}
+.theo span{position:absolute; right:2px; bottom:2px; font-size:11px; color:var(--red); background:rgba(255,255,255,.85); padding:0 4px; border-radius:4px}
+.xlabels{display:flex; padding-left:38px; margin-top:6px}
+.xlabels div{flex:1; text-align:center; font-size:12.5px; line-height:1.3}
+.xlabels em{display:block; font-style:normal; color:var(--muted); font-size:11.5px; font-variant-numeric:tabular-nums}
+
+/* checks */
+.checks{display:grid; gap:10px}
+.check{border-radius:12px; padding:12px 14px; font-size:13.5px; border:1px solid transparent}
+.check .t{display:flex; align-items:center; gap:8px; font-weight:800; font-size:14px; margin-bottom:4px}
+.check .ic{width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:13px; flex:none}
+.check .d{font-variant-numeric:tabular-nums; word-break:keep-all; overflow-wrap:anywhere}
+.check.ok{background:var(--okbg); border-color:#bfe3cb} .check.ok .ic{background:var(--ok)}
+.check.bad{background:var(--warnbg); border-color:#f2c4bf} .check.bad .ic{background:var(--warn)}
+.check.pend{background:var(--pendbg); border-color:#ddd9cb} .check.pend .ic{background:var(--pend)}
+.note{margin:14px 2px 0; font-size:12.5px; color:var(--muted)}
+
+@media (max-width:900px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:600px){
+  .wrap{padding:14px 12px 32px}
+  .stage{aspect-ratio:1/1}
+  .row2{grid-template-columns:1fr}
+  .plot{height:210px}
+  th,td{padding:7px 3px; font-size:13.5px}
+  .card{padding:14px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>🎲 3D 주사위 <span>시뮬레이터</span></h1>
+    <p class="sub">주사위를 수천 번 굴려 각 눈의 출현 빈도와 확률을 실시간으로 확인해 보세요. (확률과 통계 실습용)</p>
+  </header>
+
+  <main class="layout">
+    <!-- 왼쪽: 3D + 컨트롤 -->
+    <section class="col">
+      <div class="card">
+        <div class="stage" id="stage">
+          <div class="badge">윗면 <b id="faceBadge">–</b></div>
+          <div class="stage-msg" id="stageMsg"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>굴리기 <small>버튼을 누르면 3D 주사위가 회전하며 결과가 누적됩니다</small></h2>
+        <div class="btns">
+          <button class="btn ghost roll-btn" data-n="1">1회</button>
+          <button class="btn roll-btn" data-n="10">10회</button>
+          <button class="btn roll-btn" data-n="100">100회</button>
+        </div>
+        <div class="row2">
+          <div class="custom">
+            <input id="customN" type="number" inputmode="numeric" min="1" max="100000" step="1" value="1000" aria-label="사용자 지정 굴리기 횟수 (1~100,000)">
+            <button class="btn roll-btn" id="customBtn">회 굴리기</button>
+          </div>
+          <button class="btn reset" id="resetBtn">↺ 초기화</button>
+        </div>
+        <div class="prog" aria-hidden="true"><i id="prog"></i></div>
+        <p class="status" id="status" aria-live="polite">굴리기 버튼을 눌러 시작하세요.</p>
+        <div class="hist-title">최근 결과 (최대 30개, 오른쪽이 가장 최근)</div>
+        <div class="hist" id="hist"><span class="empty">아직 결과가 없습니다.</span></div>
+      </div>
+    </section>
+
+    <!-- 오른쪽: 표 / 그래프 / 검증 -->
+    <section class="col">
+      <div class="card">
+        <h2>집계표 <small>눈별 출현횟수 · 백분율</small></h2>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr><th>눈</th><th>출현횟수</th><th>백분율(%)</th><th>이론값 대비(%p)</th></tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+            <tfoot>
+              <tr><td>합계</td><td id="sumCnt">0</td><td id="sumPct">0.00</td><td>–</td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <p class="note">이론적 확률은 각 눈 1/6 ≈ 16.67% 입니다. 횟수가 많아질수록 실험 비율이 이론값에 가까워집니다(큰 수의 법칙).</p>
+      </div>
+
+      <div class="card">
+        <h2>확률 막대그래프 <small>세로축: 출현 비율(%)</small></h2>
+        <div class="chart">
+          <div class="plot" id="plot">
+            <div id="gridBox"></div>
+            <div class="bars" id="bars"></div>
+            <div class="theo" id="theo"><span>이론값 16.67%</span></div>
+          </div>
+        </div>
+        <div class="xlabels" id="xlabels"></div>
+      </div>
+
+      <div class="card">
+        <h2>결과 검증</h2>
+        <div class="checks">
+          <div class="check pend" id="chk1">
+            <div class="t"><span class="ic">?</span><span>① 눈별 출현횟수의 합 = 전체 실행 횟수</span></div>
+            <div class="d" id="chk1d"></div>
+          </div>
+          <div class="check pend" id="chk2">
+            <div class="t"><span class="ic">?</span><span>② 3D 화면의 눈 = 집계된 값</span></div>
+            <div class="d" id="chk2d"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>window.THREE||document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>')</script>
+<script>
+(function(){
+'use strict';
+
+/* ---------- 공통 유틸 ---------- */
+var $ = function(id){return document.getElementById(id);};
+var nf = function(n){return n.toLocaleString('ko-KR');};
+var TAU = Math.PI*2;
+var MAX_N = 100000;
+
+/* ---------- 상태 ---------- */
+var counts=[0,0,0,0,0,0], total=0, last=null, history=[];
+var verifyTotal=0, verifyOK=0;
+var busy=false, pending=false, runId=0;
+var progDone=0, progTotal=1;
+
+/* ---------- 표 / 그래프 DOM 구성 ---------- */
+var cntEl=[], pctEl=[], devEl=[], barEl=[], barVEl=[], xCntEl=[];
+(function buildUI(){
+  var tb=$('tbody'), bars=$('bars'), xl=$('xlabels');
+  for(var i=0;i<6;i++){
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td><span class="face'+(i===0?' one':'')+'">'+(i+1)+'</span></td><td></td><td></td><td></td>';
+    tb.appendChild(tr);
+    cntEl.push(tr.children[1]); pctEl.push(tr.children[2]); devEl.push(tr.children[3]);
+
+    var col=document.createElement('div'); col.className='bcol';
+    var bar=document.createElement('div'); bar.className='bar';
+    var v=document.createElement('div'); v.className='v'; v.textContent='0.0%';
+    bar.appendChild(v); col.appendChild(bar); bars.appendChild(col);
+    barEl.push(bar); barVEl.push(v);
+
+    var x=document.createElement('div');
+    x.innerHTML='<strong>'+(i+1)+'</strong><em>0회</em>';
+    xl.appendChild(x); xCntEl.push(x.querySelector('em'));
+  }
+})();
+
+var gridKey='';
+function buildGrid(yMax){
+  var step = yMax<=30?5 : (yMax<=60?10:20);
+  var key=yMax+'/'+step;
+  if(key===gridKey) return; gridKey=key;
+  var html='';
+  for(var v=0; v<=yMax+1e-9; v+=step){
+    html+='<div class="grid" style="bottom:'+(v/yMax*100)+'%"><span>'+v+'%</span></div>';
+  }
+  $('gridBox').innerHTML=html;
+}
+
+/* ---------- 3D 장면 ---------- */
+var hasGL = (typeof THREE!=='undefined');
+var renderer, scene, camera, dice, stage=$('stage');
+var FACE_VALUES=[3,4,1,6,2,5]; // 재질 순서: +x,-x,+y,-y,+z,-z  (마주보는 면의 합 = 7)
+var FACE_NORMALS, VALUE_NORMAL={}, UP;
+
+function showStageMsg(t){var m=$('stageMsg'); m.style.display='flex'; m.textContent=t;}
+
+if(hasGL){
+  try{
+    UP=new THREE.Vector3(0,1,0);
+    FACE_NORMALS=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].map(function(a){return new THREE.Vector3(a[0],a[1],a[2]);});
+    FACE_VALUES.forEach(function(v,i){VALUE_NORMAL[v]=FACE_NORMALS[i];});
+
+    renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+    renderer.shadowMap.enabled=true;
+    renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+    stage.insertBefore(renderer.domElement, stage.firstChild);
+
+    scene=new THREE.Scene();
+    camera=new THREE.PerspectiveCamera(38,1,0.1,100);
+    scene.add(new THREE.HemisphereLight(0xffffff,0x7fa597,0.9));
+    var dl=new THREE.DirectionalLight(0xffffff,0.85);
+    dl.position.set(3,7,4); dl.castShadow=true; dl.shadow.mapSize.set(1024,1024);
+    var sc=dl.shadow.camera; sc.left=-5; sc.right=5; sc.top=5; sc.bottom=-5; sc.near=1; sc.far=20;
+    scene.add(dl);
+
+    var ground=new THREE.Mesh(new THREE.PlaneGeometry(40,40), new THREE.ShadowMaterial({opacity:0.32}));
+    ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+
+    dice=new THREE.Mesh(new THREE.BoxGeometry(1,1,1), FACE_VALUES.map(function(v){
+      var tex=new THREE.CanvasTexture(faceCanvas(v));
+      tex.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+      return new THREE.MeshStandardMaterial({map:tex,roughness:0.38,metalness:0.02});
+    }));
+    dice.castShadow=true;
+    scene.add(dice);
+    dice.position.set(0,0.5,0);
+    dice.quaternion.copy(targetQuat(1,0.6));
+  }catch(e){
+    hasGL=false;
+    showStageMsg('이 브라우저에서는 3D(WebGL)를 사용할 수 없습니다. 집계 기능은 그대로 사용할 수 있습니다.');
+  }
+}else{
+  showStageMsg('3D 라이브러리(Three.js)를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요. 집계 기능은 사용할 수 있습니다.');
+}
+
+function faceCanvas(v){
+  var s=256, c=document.createElement('canvas'); c.width=c.height=s;
+  var g=c.getContext('2d');
+  g.fillStyle='#fbf8ee'; g.fillRect(0,0,s,s);
+  var grd=g.createLinearGradient(0,0,s,s); grd.addColorStop(0,'#ffffff'); grd.addColorStop(1,'#eee8d6');
+  g.fillStyle=grd; roundRect(g,8,8,s-16,s-16,34); g.fill();
+  g.lineWidth=5; g.strokeStyle='#d9d2bc'; roundRect(g,8,8,s-16,s-16,34); g.stroke();
+  var a=64,b=128,d=192;
+  var P={1:[[b,b]],2:[[a,a],[d,d]],3:[[a,a],[b,b],[d,d]],4:[[a,a],[d,a],[a,d],[d,d]],
+         5:[[a,a],[d,a],[b,b],[a,d],[d,d]],6:[[a,a],[a,b],[a,d],[d,a],[d,b],[d,d]]};
+  P[v].forEach(function(p){
+    var r = v===1?36:25;
+    var rg=g.createRadialGradient(p[0]-r*.3,p[1]-r*.3,r*.1,p[0],p[1],r);
+    if(v===1){rg.addColorStop(0,'#f26a5e'); rg.addColorStop(1,'#b92b20');}
+    else{rg.addColorStop(0,'#4a4a4a'); rg.addColorStop(1,'#0f0f0f');}
+    g.fillStyle=rg; g.beginPath(); g.arc(p[0],p[1],r,0,TAU); g.fill();
+  });
+  return c;
+}
+function roundRect(g,x,y,w,h,r){
+  g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r);
+  g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
+}
+
+/* value 눈이 위(+y)를 향하는 목표 회전 */
+function targetQuat(v,yaw){
+  var qa=new THREE.Quaternion().setFromUnitVectors(VALUE_NORMAL[v],UP);
+  var qy=new THREE.Quaternion().setFromAxisAngle(UP,yaw);
+  return qy.multiply(qa);
+}
+/* 현재 회전에서 실제로 위를 향한 면의 눈 (3D 화면 기준 판독) */
+function detectFace(){
+  var best=-2,bv=0;
+  for(var i=0;i<6;i++){
+    var y=FACE_NORMALS[i].clone().applyQuaternion(dice.quaternion).y;
+    if(y>best){best=y;bv=FACE_VALUES[i];}
+  }
+  return bv;
+}
+var _m4;
+function halfH(q){
+  if(!_m4)_m4=new THREE.Matrix4();
+  var e=_m4.makeRotationFromQuaternion(q).elements;
+  return 0.5*(Math.abs(e[1])+Math.abs(e[5])+Math.abs(e[9]));
+}
+function randUnit(){
+  var v=new THREE.Vector3(Math.random()*2-1,Math.random()*2-1,Math.random()*2-1);
+  if(v.lengthSq()<1e-4) v.set(1,0,0);
+  return v.normalize();
+}
+
+/* ---------- 굴리기 애니메이션 ---------- */
+var PRESET={
+  full :{dur:1500,turns:3,m:1,H:1.9,freq:2.5,drift:1.0},
+  quick:{dur:460, turns:1,m:0,H:0.7,freq:1.5,drift:0.5},
+  fin  :{dur:800, turns:2,m:1,H:1.2,freq:2.0,drift:0.8}
+};
+var anim=null, turbo=null, turboTime=0;
+var q1,q2;
+if(hasGL){q1=new THREE.Quaternion(); q2=new THREE.Quaternion();}
+
+function rollOnce(v,o){
+  return new Promise(function(resolve){
+    pending=true; ui();
+    if(!hasGL){ setTimeout(resolve,o.dur*0.4); return; }
+    var qT=targetQuat(v,Math.random()*TAU);
+    var qS=dice.quaternion.clone();
+    var d=qS.clone().multiply(qT.clone().invert()).normalize();
+    if(d.w<0){d.x=-d.x;d.y=-d.y;d.z=-d.z;d.w=-d.w;}
+    var th0=2*Math.acos(Math.min(1,d.w));
+    var s=Math.sqrt(Math.max(0,1-d.w*d.w));
+    var ax1 = s>1e-4 ? new THREE.Vector3(d.x/s,d.y/s,d.z/s) : randUnit();
+    anim={
+      t0:performance.now(), dur:o.dur, qT:qT, th0:th0, ax1:ax1, ax2:randUnit(),
+      turns:o.turns+Math.floor(Math.random()*2), m:o.m, H:o.H, freq:o.freq,
+      sx:dice.position.x, sz:dice.position.z,
+      dx:(Math.random()*2-1)*0.9*o.drift, dz:(Math.random()*2-1)*0.7*o.drift,
+      dy:dice.position.y-halfH(qS), resolve:resolve
+    };
+  });
+}
+function stepAnim(now){
+  var a=anim, t=(now-a.t0)/a.dur;
+  if(t>=1){
+    dice.quaternion.copy(a.qT); dice.position.set(0,0.5,0);
+    anim=null; a.resolve(); return;
+  }
+  var f=Math.pow(1-t,2.2);
+  q1.setFromAxisAngle(a.ax1,(a.th0+TAU*a.turns)*f);
+  q2.setFromAxisAngle(a.ax2,TAU*a.m*f);
+  dice.quaternion.copy(q2).multiply(q1).multiply(a.qT);
+  var te=1-Math.pow(1-t,3);
+  dice.position.x=a.sx*(1-te)+a.dx*Math.sin(Math.PI*t);
+  dice.position.z=a.sz*(1-te)+a.dz*Math.sin(Math.PI*t);
+  dice.position.y=halfH(dice.quaternion)
+    + a.H*Math.abs(Math.sin(Math.PI*a.freq*t))*Math.pow(1-t,1.3)
+    + a.dy*Math.max(0,1-t*5);
+}
+
+/* 대량 굴리기: 주사위가 연속 회전하는 동안 결과를 실시간 누적 */
+function runTurbo(results){
+  return new Promise(function(resolve){
+    pending=true;
+    var m=results.length;
+    var dur=Math.min(4500, 1200+600*Math.log(m)/Math.LN10);
+    turbo={t0:performance.now(), dur:dur, r:results, m:m, k:0, resolve:resolve};
+    ui();
+  });
+}
+function stepTurbo(now,dt){
+  var tb=turbo, p=(now-tb.t0)/tb.dur;
+  var target = p>=1 ? tb.m : Math.floor(p*tb.m);
+  for(; tb.k<target; tb.k++){ counts[tb.r[tb.k]-1]++; total++; }
+  if(hasGL){
+    turboTime+=dt;
+    var ax=new THREE.Vector3(Math.sin(turboTime*3.1),Math.cos(turboTime*2.3),Math.sin(turboTime*1.7)+0.2).normalize();
+    var dq=new THREE.Quaternion().setFromAxisAngle(ax,14*dt);
+    dice.quaternion.premultiply(dq).normalize();
+    dice.position.set(0.55*Math.sin(turboTime*3.7), halfH(dice.quaternion)+0.9*Math.abs(Math.sin(turboTime*10)), 0.4*Math.cos(turboTime*4.3));
+  }
+  setProg(tb.k,tb.m);
+  ui();
+  if(p>=1){
+    var tail=tb.r.slice(-29);
+    for(var i=0;i<tail.length;i++) history.push(tail[i]);
+    if(history.length>30) history.splice(0,history.length-30);
+    turbo=null; tb.resolve();
+  }
+}
+
+/* ---------- 기록 / 검증 ---------- */
+function record(v){
+  counts[v-1]++; total++; last=v;
+  history.push(v); if(history.length>30) history.shift();
+  pending=false;
+  if(hasGL){
+    verifyTotal++;
+    if(detectFace()===v) verifyOK++;
+  }
+  ui();
+}
+
+/* ---------- UI 갱신 ---------- */
+function setProg(done,tot){progDone=done;progTotal=Math.max(1,tot);$('prog').style.width=(done/progTotal*100)+'%';}
+function setStatus(t){$('status').textContent=t;}
+function setBusy(b){
+  var bs=document.querySelectorAll('.roll-btn');
+  for(var i=0;i<bs.length;i++) bs[i].disabled=b;
+  $('customN').disabled=b;
+}
+function setCheck(el,cls,icon,text){
+  $(el).className='check '+cls;
+  $(el).querySelector('.ic').textContent=icon;
+  $(el+'d').textContent=text;
+}
+function ui(){
+  var pcts=counts.map(function(c){return total?c/total*100:0;});
+  var maxP=Math.max.apply(null,pcts);
+  var yMax=Math.min(100,Math.max(25,Math.ceil(maxP*1.12/5)*5));
+  buildGrid(yMax);
+  var ideal=100/6;
+  for(var i=0;i<6;i++){
+    cntEl[i].textContent=nf(counts[i]);
+    pctEl[i].textContent=pcts[i].toFixed(2);
+    if(total){
+      var dv=pcts[i]-ideal;
+      devEl[i].textContent=(dv>=0?'+':'')+dv.toFixed(2);
+      devEl[i].className=dv>=0?'pos':'neg';
+    }else{devEl[i].textContent='–';devEl[i].className='';}
+    barEl[i].style.height=(pcts[i]/yMax*100)+'%';
+    barVEl[i].textContent=pcts[i].toFixed(1)+'%';
+    xCntEl[i].textContent=nf(counts[i])+'회';
+  }
+  $('theo').style.bottom=(ideal/yMax*100)+'%';
+  var sum=counts.reduce(function(a,b){return a+b;},0);
+  $('sumCnt').textContent=nf(sum);
+  $('sumPct').textContent=total?pcts.reduce(function(a,b){return a+b;},0).toFixed(2):'0.00';
+
+  /* 검증 ① */
+  if(total===0){
+    setCheck('chk1','pend','?','아직 실행 기록이 없습니다. (합계 0 / 전체 0)');
+  }else if(sum===total){
+    setCheck('chk1','ok','✓',counts.join(' + ')+' = '+nf(sum)+' ,  전체 실행 횟수 '+nf(total)+' → 일치');
+  }else{
+    setCheck('chk1','bad','!','합계 '+nf(sum)+' ≠ 전체 실행 횟수 '+nf(total)+' → 불일치');
+  }
+  /* 검증 ② */
+  if(!hasGL){
+    setCheck('chk2','pend','?','3D 화면을 사용할 수 없어 확인할 수 없습니다.');
+    $('faceBadge').textContent='–';
+  }else if(pending){
+    setCheck('chk2','pend','…','주사위가 굴러가는 중입니다. 멈추면 3D 윗면을 읽어 집계값과 비교합니다.');
+    $('faceBadge').textContent='…';
+  }else if(last===null){
+    setCheck('chk2','pend','?','아직 굴리지 않았습니다.');
+    $('faceBadge').textContent='–';
+  }else{
+    var shown=detectFace();
+    $('faceBadge').textContent=shown;
+    var okNow=(shown===last);
+    var txt='3D 윗면 '+shown+' / 마지막 집계 결과 '+last+' → '+(okNow?'일치':'불일치')
+      +'  (누적 검증 '+nf(verifyTotal)+'회 중 '+nf(verifyOK)+'회 일치)';
+    setCheck('chk2',(okNow&&verifyOK===verifyTotal)?'ok':'bad',(okNow&&verifyOK===verifyTotal)?'✓':'!',txt);
+  }
+  /* 최근 결과 */
+  var h=$('hist');
+  if(!history.length){h.innerHTML='<span class="empty">아직 결과가 없습니다.</span>';}
+  else{h.innerHTML=history.map(function(v){return '<span class="chip">'+v+'</span>';}).join('');}
+}
+
+/* ---------- 실행 제어 ---------- */
+async function run(n){
+  if(busy) return;
+  busy=true; setBusy(true);
+  var id=++runId;
+  var res=new Array(n);
+  for(var i=0;i<n;i++) res[i]=1+Math.floor(Math.random()*6);
+  setProg(0,n);
+  setStatus(nf(n)+'회 굴리는 중…');
+  if(n===1){
+    await rollOnce(res[0],PRESET.full); if(id!==runId) return;
+    record(res[0]);
+  }else if(n<=10){
+    for(var j=0;j<n;j++){
+      await rollOnce(res[j],PRESET.quick); if(id!==runId) return;
+      record(res[j]); setProg(j+1,n);
+      setStatus(nf(n)+'회 굴리는 중… ('+(j+1)+'/'+n+')');
+    }
+  }else{
+    await runTurbo(res.slice(0,n-1)); if(id!==runId) return;
+    await rollOnce(res[n-1],PRESET.fin); if(id!==runId) return;
+    record(res[n-1]); setProg(n,n);
+  }
+  busy=false; setBusy(false);
+  setStatus('완료! 총 '+nf(total)+'회 실행됨 · 마지막 결과: '+last);
+}
+function reset(){
+  runId++; anim=null; turbo=null; busy=false; pending=false; setBusy(false);
+  counts=[0,0,0,0,0,0]; total=0; last=null; history=[]; verifyTotal=0; verifyOK=0;
+  if(hasGL){ dice.quaternion.copy(targetQuat(1,0.6)); dice.position.set(0,0.5,0); }
+  setProg(0,1); setStatus('초기화되었습니다. 굴리기 버튼을 눌러 다시 시작하세요.');
+  ui();
+}
+
+/* ---------- 이벤트 ---------- */
+var rb=document.querySelectorAll('.roll-btn[data-n]');
+for(var k=0;k<rb.length;k++){
+  rb[k].addEventListener('click',(function(b){return function(){run(parseInt(b.getAttribute('data-n'),10));};})(rb[k]));
+}
+function runCustom(){
+  var inp=$('customN'), n=parseInt(inp.value,10);
+  if(!isFinite(n)||n<1){setStatus('1 ~ '+nf(MAX_N)+' 사이의 정수를 입력해 주세요.'); inp.focus(); return;}
+  if(n>MAX_N){n=MAX_N; inp.value=n; setStatus('최대 '+nf(MAX_N)+'회까지 가능하여 '+nf(MAX_N)+'회로 조정했습니다.');}
+  run(n);
+}
+$('customBtn').addEventListener('click',runCustom);
+$('customN').addEventListener('keydown',function(e){if(e.key==='Enter')runCustom();});
+$('customN').addEventListener('input',function(){
+  var n=parseInt(this.value,10);
+  $('customBtn').textContent=(isFinite(n)&&n>0?nf(Math.min(n,MAX_N)):'')+'회 굴리기';
+});
+$('resetBtn').addEventListener('click',reset);
+
+/* ---------- 크기 / 렌더 루프 ---------- */
+function resize(){
+  if(!hasGL) return;
+  var w=stage.clientWidth, h=stage.clientHeight;
+  if(!w||!h) return;
+  renderer.setSize(w,h,false);
+  camera.aspect=w/h;
+  var s=camera.aspect<1.3?Math.min(1.7,1.3/camera.aspect):1;
+  camera.position.set(0,5.2*s,6.4*s);
+  camera.lookAt(0,0.9,0);
+  camera.updateProjectionMatrix();
+}
+if(window.ResizeObserver){new ResizeObserver(resize).observe(stage);}
+window.addEventListener('resize',resize);
+resize();
+
+var prev=performance.now();
+function frame(now){
+  requestAnimationFrame(frame);
+  var dt=Math.min(0.05,(now-prev)/1000); prev=now;
+  if(anim) stepAnim(now);
+  if(turbo) stepTurbo(now,dt);
+  if(hasGL) renderer.render(scene,camera);
+}
+requestAnimationFrame(frame);
+
+ui();
+})();
+</script>
+</body>
+</html>
