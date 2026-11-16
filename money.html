@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>구글 시트 연동 가계부</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', 'Noto Sans KR', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .form-input {
+            width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #e2e8f0; 
+            border-radius: 0.5rem; transition: all 0.2s; outline: none;
+        }
+        .form-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .loader {
+            border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6;
+            border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <div class="max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+        <!-- 헤더 영역 -->
+        <header class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-cloud text-blue-500"></i> 클라우드 지출 관리
+                </h1>
+                <p class="text-slate-500 mt-1 text-sm md:text-base">입력한 데이터는 구글 시트에 안전하게 자동 저장됩니다.</p>
+            </div>
+            <div id="syncStatus" class="flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                <div class="loader hidden" id="syncSpinner"></div>
+                <i class="fa-solid fa-check-circle" id="syncIcon"></i>
+                <span id="syncText">동기화 완료</span>
+            </div>
+        </header>
+
+        <!-- 대시보드 (차트 영역) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col h-80">
+                <h2 class="text-lg font-semibold text-slate-700 mb-4"><i class="fa-solid fa-chart-pie text-blue-500 mr-2"></i>항목별 지출 비중</h2>
+                <div class="flex-1 relative w-full flex justify-center">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col h-80">
+                <h2 class="text-lg font-semibold text-slate-700 mb-4"><i class="fa-solid fa-chart-line text-emerald-500 mr-2"></i>월별 지출 흐름</h2>
+                <div class="flex-1 relative w-full">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 콘텐츠 영역 -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <!-- 지출 입력 폼 -->
+            <div class="xl:col-span-1">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 sticky top-6">
+                    <h2 class="text-lg font-semibold text-slate-700 mb-4"><i class="fa-solid fa-plus-circle text-indigo-500 mr-2"></i>새 지출 등록</h2>
+                    
+                    <form id="expenseForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">거래일시</label>
+                            <input type="date" id="dateInput" class="form-input" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">지출 항목</label>
+                            <select id="categoryInput" class="form-input bg-white" required>
+                                <option value="식비" selected>식비</option>
+                                <option value="카페/간식">카페/간식</option>
+                                <option value="교통">교통</option>
+                                <option value="쇼핑">쇼핑</option>
+                                <option value="주거/통신">주거/통신</option>
+                                <option value="문화/여가">문화/여가</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">가맹점명 (상호명)</label>
+                            <input type="text" id="storeInput" class="form-input" placeholder="예: 스타벅스 강남점" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-600 mb-1">결제 금액 (원)</label>
+                            <input type="number" id="amountInput" class="form-input" placeholder="0" min="0" required>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-colors mt-2 disabled:bg-slate-400" id="submitBtn">
+                            내역 추가하기
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 지출 내역 리스트 -->
+            <div class="xl:col-span-2">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full">
+                    <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <h2 class="text-lg font-semibold text-slate-700"><i class="fa-solid fa-list-ul text-slate-500 mr-2"></i>지출 내역 목록</h2>
+                        <button onclick="exportToExcel()" class="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-file-excel"></i> 엑셀 백업
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto flex-1">
+                        <table class="w-full text-left min-w-[600px] border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
+                                    <th class="px-6 py-3 font-semibold w-24">날짜</th>
+                                    <th class="px-6 py-3 font-semibold w-24">항목</th>
+                                    <th class="px-6 py-3 font-semibold">가맹점명</th>
+                                    <th class="px-6 py-3 font-semibold text-right w-32">금액</th>
+                                    <th class="px-6 py-3 font-semibold text-center w-24">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenseTableBody" class="divide-y divide-slate-100">
+                                <!-- 데이터 행 추가 -->
+                            </tbody>
+                        </table>
+                        
+                        <div id="emptyState" class="hidden flex-col items-center justify-center p-12 text-slate-400">
+                            <i class="fa-regular fa-folder-open text-4xl mb-3"></i>
+                            <p>등록된 지출 내역이 없습니다.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 border-t border-slate-100 flex justify-between items-center text-slate-700 font-semibold">
+                        <span>총 지출 합계:</span>
+                        <span id="totalSumAmount" class="text-indigo-600 text-lg">0 원</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 수정 모달 -->
+    <div id="editModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-800">지출 내역 수정</h3>
+                <button type="button" onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <form id="editForm" class="p-6 space-y-4">
+                <input type="hidden" id="editId">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">거래일시</label>
+                    <input type="date" id="editDate" class="form-input" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">지출 항목</label>
+                    <select id="editCategory" class="form-input bg-white" required>
+                        <option value="식비">식비</option>
+                        <option value="카페/간식">카페/간식</option>
+                        <option value="교통">교통</option>
+                        <option value="쇼핑">쇼핑</option>
+                        <option value="주거/통신">주거/통신</option>
+                        <option value="문화/여가">문화/여가</option>
+                        <option value="기타">기타</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">가맹점명</label>
+                    <input type="text" id="editStore" class="form-input" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600 mb-1">결제 금액</label>
+                    <input type="number" id="editAmount" class="form-input" min="0" required>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">취소</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold" id="editSubmitBtn">저장하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 확인 모달 (삭제 등 경고창 용도) -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 text-center">
+            <i class="fa-solid fa-triangle-exclamation text-4xl text-amber-500 mb-4 block"></i>
+            <h3 class="font-bold text-lg text-slate-800 mb-2">삭제하시겠습니까?</h3>
+            <p class="text-slate-600 mb-6 text-sm">삭제된 내역은 구글 시트에서도 영구적으로 지워집니다.</p>
+            <div class="flex gap-3">
+                <button type="button" onclick="closeConfirmModal()" class="flex-1 px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors">취소</button>
+                <button type="button" id="confirmActionBtn" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메시지 모달 (알림용) -->
+    <div id="messageModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 text-center">
+            <h3 class="font-bold text-lg text-slate-800 mb-2" id="messageTitle">알림</h3>
+            <p class="text-slate-600 mb-6 text-sm" id="messageBody"></p>
+            <button type="button" onclick="closeMessageModal()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">확인</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // ⚠️ 구글 앱스 스크립트 웹 앱 URL을 여기에 입력하세요
+        // ==========================================
+        const GAS_URL = 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL';
+        
+        // 전역 상태 관리
+        let expenses = [];
+        let categoryChartInstance = null;
+        let monthlyChartInstance = null;
+        let deleteTargetId = null;
+
+        // 카테고리별 색상 매핑
+        const categoryColors = {
+            '식비': '#f59e0b', '카페/간식': '#ec4899', '교통': '#3b82f6',
+            '쇼핑': '#8b5cf6', '주거/통신': '#10b981', '문화/여가': '#06b6d4', '기타': '#64748b'
+        };
+
+        // 초기화 및 데이터 로드
+        async function init() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = today;
+
+            document.getElementById('expenseForm').addEventListener('submit', handleAddExpense);
+            document.getElementById('editForm').addEventListener('submit', handleSaveEdit);
+            document.getElementById('confirmActionBtn').addEventListener('click', executeDelete);
+
+            initCharts();
+            await fetchExpenses(); // 시트에서 데이터 가져오기
+        }
+
+        // 상태 표시 관리
+        function setSyncing(isSyncing) {
+            const spinner = document.getElementById('syncSpinner');
+            const icon = document.getElementById('syncIcon');
+            const text = document.getElementById('syncText');
+            const statusBox = document.getElementById('syncStatus');
+            const btns = [document.getElementById('submitBtn'), document.getElementById('editSubmitBtn')];
+            
+            if (isSyncing) {
+                spinner.classList.remove('hidden');
+                icon.classList.add('hidden');
+                text.textContent = '동기화 중...';
+                statusBox.className = 'flex items-center gap-2 px-3 py-1.5 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium';
+                btns.forEach(b => b.disabled = true);
+            } else {
+                spinner.classList.add('hidden');
+                icon.classList.remove('hidden');
+                text.textContent = '동기화 완료';
+                statusBox.className = 'flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium';
+                btns.forEach(b => b.disabled = false);
+            }
+        }
+
+        function showMessage(title, message) {
+            document.getElementById('messageTitle').textContent = title;
+            document.getElementById('messageBody').textContent = message;
+            document.getElementById('messageModal').classList.remove('hidden');
+        }
+
+        function closeMessageModal() {
+            document.getElementById('messageModal').classList.add('hidden');
+        }
+
+        // GET: 데이터 불러오기
+        async function fetchExpenses() {
+            if (GAS_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL') {
+                showMessage("설정 필요", "GAS_URL이 설정되지 않았습니다. 코드 내에 웹앱 URL을 입력해주세요.");
+                updateUI();
+                return;
+            }
+            
+            setSyncing(true);
+            try {
+                const res = await fetch(GAS_URL);
+                if(!res.ok) throw new Error("네트워크 응답 오류");
+                const data = await res.json();
+                
+                // 데이터 정제 (숫자 파싱)
+                expenses = data.map(item => ({
+                    ...item,
+                    amount: Number(item.amount) || 0,
+                    // 날짜 형식 보정 (시트에서 가져온 ISO 문자열 등을 YYYY-MM-DD로)
+                    date: item.date.substring(0, 10)
+                }));
+                updateUI();
+            } catch (e) {
+                console.error("데이터 로드 실패:", e);
+                showMessage("오류", "데이터를 불러오는 데 실패했습니다.");
+            } finally {
+                setSyncing(false);
+            }
+        }
+
+        // POST 요청 공통 함수
+        async function sendPostRequest(payload) {
+            if (GAS_URL === 'YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL') {
+                showMessage("설정 오류", "Google Apps Script URL이 설정되지 않았습니다.");
+                return false;
+            }
+            
+            setSyncing(true);
+            try {
+                // text/plain 방식으로 전송 (CORS 프리플라이트 회피)
+                const res = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                return result.success;
+            } catch (e) {
+                console.error("전송 실패:", e);
+                showMessage("네트워크 오류", "서버 통신에 실패했습니다.");
+                return false;
+            } finally {
+                setSyncing(false);
+            }
+        }
+
+        // 지출 추가
+        async function handleAddExpense(e) {
+            e.preventDefault();
+            
+            const newExpense = {
+                id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+                date: document.getElementById('dateInput').value,
+                category: document.getElementById('categoryInput').value,
+                store: document.getElementById('storeInput').value,
+                amount: parseInt(document.getElementById('amountInput').value, 10)
+            };
+
+            // UI 선반영 (Optimistic Update)
+            expenses.push(newExpense);
+            updateUI();
+            
+            // 입력창 초기화
+            document.getElementById('storeInput').value = '';
+            document.getElementById('amountInput').value = '';
+            document.getElementById('storeInput').focus();
+
+            // 백엔드 통신
+            const success = await sendPostRequest({ action: 'add', item: newExpense });
+            if (!success) {
+                // 롤백
+                expenses = expenses.filter(exp => exp.id !== newExpense.id);
+                updateUI();
+            }
+        }
+
+        // 삭제 확인창 열기
+        function promptDelete(id) {
+            deleteTargetId = id;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            deleteTargetId = null;
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+
+        // 실제 삭제 실행
+        async function executeDelete() {
+            if (!deleteTargetId) return;
+            const id = deleteTargetId;
+            closeConfirmModal();
+
+            // 백업 (롤백용)
+            const backupExp = expenses.find(exp => exp.id === id);
+            
+            // UI 선반영
+            expenses = expenses.filter(exp => exp.id !== id);
+            updateUI();
+
+            const success = await sendPostRequest({ action: 'delete', id: id });
+            if (!success && backupExp) {
+                expenses.push(backupExp); // 롤백
+                updateUI();
+            }
+        }
+
+        // 수정 모달 관리
+        function openEditModal(id) {
+            const exp = expenses.find(e => e.id === id);
+            if (!exp) return;
+            document.getElementById('editId').value = exp.id;
+            document.getElementById('editDate').value = exp.date;
+            document.getElementById('editCategory').value = exp.category;
+            document.getElementById('editStore').value = exp.store;
+            document.getElementById('editAmount').value = exp.amount;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        // 수정 내용 저장
+        async function handleSaveEdit(e) {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const updatedExpense = {
+                id: id,
+                date: document.getElementById('editDate').value,
+                category: document.getElementById('editCategory').value,
+                store: document.getElementById('editStore').value,
+                amount: parseInt(document.getElementById('editAmount').value, 10)
+            };
+
+            const idx = expenses.findIndex(exp => exp.id === id);
+            if (idx > -1) {
+                const originalExpense = { ...expenses[idx] }; // 롤백 백업
+                expenses[idx] = updatedExpense; // UI 선반영
+                updateUI();
+                closeEditModal();
+
+                const success = await sendPostRequest({ action: 'edit', item: updatedExpense });
+                if (!success) {
+                    expenses[idx] = originalExpense; // 롤백
+                    updateUI();
+                }
+            }
+        }
+
+        // --- UI 및 차트 업데이트 ---
+        function updateUI() {
+            renderTable();
+            updateCharts();
+        }
+
+        function formatNumber(num) {
+            return num.toLocaleString('ko-KR');
+        }
+
+        function getBadgeClass(category) {
+            const base = "px-2 py-1 text-xs font-semibold rounded-full ";
+            const colors = {
+                '식비': 'bg-amber-100 text-amber-700', '카페/간식': 'bg-pink-100 text-pink-700',
+                '교통': 'bg-blue-100 text-blue-700', '쇼핑': 'bg-violet-100 text-violet-700',
+                '주거/통신': 'bg-emerald-100 text-emerald-700', '문화/여가': 'bg-cyan-100 text-cyan-700'
+            };
+            return base + (colors[category] || "bg-slate-100 text-slate-700");
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('expenseTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const totalSumEl = document.getElementById('totalSumAmount');
+            tbody.innerHTML = '';
+            
+            const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+            if (sortedExpenses.length === 0) {
+                emptyState.style.display = 'flex';
+                totalSumEl.textContent = '0 원';
+                return;
+            } else {
+                emptyState.style.display = 'none';
+            }
+
+            let totalSum = 0;
+            sortedExpenses.forEach(exp => {
+                totalSum += exp.amount;
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors group";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">${exp.date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap"><span class="${getBadgeClass(exp.category)}">${exp.category}</span></td>
+                    <td class="px-6 py-4 text-sm font-medium text-slate-800">${exp.store}</td>
+                    <td class="px-6 py-4 text-sm text-right text-slate-700 font-semibold whitespace-nowrap">${formatNumber(exp.amount)} 원</td>
+                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                        <button onclick="openEditModal('${exp.id}')" class="text-slate-400 hover:text-blue-500 mx-1 transition-colors" title="수정"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="promptDelete('${exp.id}')" class="text-slate-400 hover:text-red-500 mx-1 transition-colors" title="삭제"><i class="fa-solid fa-trash-can"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            totalSumEl.textContent = `${formatNumber(totalSum)} 원`;
+        }
+
+        function initCharts() {
+            Chart.defaults.font.family = "'Inter', 'Noto Sans KR', sans-serif";
+            Chart.defaults.color = '#64748b';
+
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            categoryChartInstance = new Chart(ctxCat, {
+                type: 'doughnut', data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '65%',
+                    plugins: {
+                        legend: { position: 'right', labels: { boxWidth: 12, padding: 15 } },
+                        tooltip: { callbacks: { label: (ctx) => (ctx.label?ctx.label+': ':'') + new Intl.NumberFormat('ko-KR').format(ctx.parsed) + '원' } }
+                    }
+                }
+            });
+
+            const ctxMonth = document.getElementById('monthlyChart').getContext('2d');
+            monthlyChartInstance = new Chart(ctxMonth, {
+                type: 'bar', data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => new Intl.NumberFormat('ko-KR').format(ctx.parsed.y) + '원' } } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: (val) => val >= 10000 ? (val/10000)+'만' : val } } }
+                }
+            });
+        }
+
+        function updateCharts() {
+            if (expenses.length === 0) {
+                categoryChartInstance.data = { labels: ['데이터 없음'], datasets: [{ data: [1], backgroundColor: ['#f1f5f9'] }] };
+                categoryChartInstance.update();
+                monthlyChartInstance.data = { labels: ['-'], datasets: [{ data: [0] }] };
+                monthlyChartInstance.update();
+                return;
+            }
+
+            const categoryData = {};
+            const monthlyData = {};
+
+            expenses.forEach(exp => {
+                categoryData[exp.category] = (categoryData[exp.category] || 0) + exp.amount;
+                const monthStr = exp.date.substring(0, 7); 
+                monthlyData[monthStr] = (monthlyData[monthStr] || 0) + exp.amount;
+            });
+
+            const catLabels = Object.keys(categoryData);
+            categoryChartInstance.data = {
+                labels: catLabels,
+                datasets: [{
+                    data: Object.values(categoryData),
+                    backgroundColor: catLabels.map(l => categoryColors[l] || '#cbd5e1'),
+                    borderWidth: 0, hoverOffset: 4
+                }]
+            };
+            categoryChartInstance.update();
+
+            const sortedMonths = Object.keys(monthlyData).sort();
+            monthlyChartInstance.data = {
+                labels: sortedMonths.map(m => m.split('-')[0].substring(2)+'년 '+parseInt(m.split('-')[1])+'월'),
+                datasets: [{
+                    label: '월별 지출',
+                    data: sortedMonths.map(m => monthlyData[m]),
+                    backgroundColor: '#818cf8', borderRadius: 4, barPercentage: 0.6
+                }]
+            };
+            monthlyChartInstance.update();
+        }
+
+        // 엑셀 내보내기 (백업)
+        function exportToExcel() {
+            if (expenses.length === 0) { showMessage("알림", "내보낼 데이터가 없습니다."); return; }
+            const sortedData = [...expenses].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const excelData = sortedData.map((item, index) => ({
+                '연번': index + 1, '거래일시': item.date, '지출항목': item.category,
+                '가맹점명(상호명)': item.store, '금액(원)': item.amount
+            }));
+            const ws = XLSX.utils.json_to_sheet(excelData);
+            ws['!cols'] = [{wch: 6}, {wch: 15}, {wch: 15}, {wch: 25}, {wch: 15}];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "지출내역");
+            
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}${(today.getMonth()+1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}`;
+            XLSX.writeFile(wb, `구글시트_백업_${dateStr}.xlsx`);
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
