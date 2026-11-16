@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f5f7f4">
+<title>오늘의 운동 체크리스트</title>
+<style>
+:root{--bg:#f5f7f4;--card:#fff;--ink:#202820;--muted:#778078;--line:#e7ece5;--green:#347a50;--green2:#e9f4eb;--orange:#f2a65a;--shadow:0 12px 34px rgba(35,58,39,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input{font:inherit}button{cursor:pointer}.wrap{width:min(100% - 36px,960px);margin:0 auto;padding:38px 0 60px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:28px}.brand{display:flex;align-items:center;gap:11px;font-weight:800;font-size:17px}.logo{width:40px;height:40px;border-radius:13px;background:var(--green);color:white;display:grid;place-items:center;font-size:21px}
+.date{color:var(--muted);font-size:13px;font-weight:600}.hero{margin-bottom:24px}.eyebrow{color:var(--green);font-size:12px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase}.hero h1{font-size:clamp(28px,5vw,42px);letter-spacing:-1.6px;margin:9px 0 8px}.hero p{margin:0;color:var(--muted);line-height:1.6}
+.summary{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;margin:24px 0}.progress-card,.stat-card,.panel{background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}
+.progress-card{padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px}.progress-copy small{color:var(--muted);font-weight:700}.progress-copy strong{display:block;font-size:30px;letter-spacing:-1px;margin-top:7px}.progress-copy span{font-size:13px;color:var(--muted)}
+.ring{--p:0;width:94px;height:94px;border-radius:50%;background:conic-gradient(var(--green) calc(var(--p)*1%),#edf1ec 0);display:grid;place-items:center;flex-shrink:0}.ring:before{content:"";width:70px;height:70px;border-radius:50%;background:white;grid-area:1/1}.ring b{grid-area:1/1;z-index:1;font-size:20px}
+.stat-card{padding:22px;display:flex;flex-direction:column;justify-content:center}.stat-card small{color:var(--muted);font-weight:700}.stat-card strong{font-size:30px;margin:7px 0 2px}.stat-card span{color:var(--muted);font-size:12px}
+.panel{padding:22px;margin-top:18px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.panel h2{font-size:18px;margin:0;letter-spacing:-.4px}.count{font-size:12px;color:var(--muted);background:#f2f5f1;padding:6px 10px;border-radius:20px}
+.add-row{display:flex;gap:9px;margin-bottom:14px}.add-row input{min-width:0;flex:1;border:1px solid var(--line);border-radius:12px;padding:13px 14px;outline:none;background:#fbfcfa}.add-row input:focus{border-color:var(--green);box-shadow:0 0 0 3px #347a5015}.add-btn{border:0;border-radius:12px;padding:0 18px;background:var(--green);color:white;font-weight:700}.add-btn:hover{background:#286440}
+.quick{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}.chip{border:1px solid var(--line);background:white;color:#59645b;padding:7px 11px;border-radius:20px;font-size:12px}.chip:hover{border-color:var(--green);color:var(--green)}
+.list{display:flex;flex-direction:column;gap:9px}.item{display:flex;align-items:center;gap:13px;padding:13px 14px;border:1px solid var(--line);border-radius:14px;transition:.15s;background:white}.item.done{background:#f8fbf7}.check{appearance:none;width:21px;height:21px;border:1.7px solid #cbd5ca;border-radius:7px;display:grid;place-items:center;flex-shrink:0;margin:0;cursor:pointer}.check:checked{background:var(--green);border-color:var(--green)}.check:checked:after{content:"✓";color:white;font-size:14px;font-weight:800}.item-name{flex:1;font-size:14px;font-weight:650;min-width:0;overflow-wrap:anywhere}.done .item-name{color:#8a958b;text-decoration:line-through}.tag{font-size:11px;color:#738075;background:#f0f4ef;padding:5px 8px;border-radius:20px}.delete{border:0;background:transparent;color:#a0aaa1;font-size:19px;padding:3px 5px;line-height:1}.delete:hover{color:#d35e54}.empty{text-align:center;padding:32px 12px;color:var(--muted);font-size:13px;line-height:1.8}.empty b{display:block;font-size:27px;margin-bottom:6px}
+.footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:17px;color:var(--muted);font-size:12px}.reset{border:0;background:transparent;color:#8a958b;text-decoration:underline;font-size:12px}
+@media(max-width:620px){.wrap{width:min(100% - 24px,520px);padding-top:24px}.top{margin-bottom:24px}.summary{grid-template-columns:1fr .75fr;gap:10px}.progress-card{padding:17px;gap:10px}.stat-card{padding:17px}.ring{width:76px;height:76px}.ring:before{width:58px;height:58px}.ring b{font-size:17px}.progress-copy strong,.stat-card strong{font-size:25px}.panel{padding:17px;border-radius:18px}.tag{display:none}.footer{align-items:flex-start}.hero h1{letter-spacing:-1px}}
+@media(max-width:380px){.summary{grid-template-columns:1fr}.progress-card{justify-content:space-between}.stat-card{padding:14px 17px}.add-btn{padding:0 13px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header class="top">
+    <div class="brand"><div class="logo">✓</div>핏데이 <span style="font-weight:500;color:#8a958b">운동 기록</span></div>
+    <div class="date" id="todayDate"></div>
+  </header>
+  <section class="hero">
+    <div class="eyebrow">YOUR DAILY MOVE</div>
+    <h1>오늘도 한 걸음,<br>건강한 나를 향해.</h1>
+    <p>오늘 계획한 운동을 체크하고 작은 성취를 쌓아보세요.</p>
+  </section>
+  <section class="summary" aria-label="오늘의 운동 현황">
+    <div class="progress-card">
+      <div class="progress-copy"><small>오늘의 달성률</small><strong id="progressText">0 / 0</strong><span id="progressCaption">운동을 추가해 시작해 보세요</span></div>
+      <div class="ring" id="progressRing"><b id="percent">0%</b></div>
+    </div>
+    <div class="stat-card"><small>완료한 운동</small><strong id="doneCount">0개</strong><span>오늘의 작은 성취</span></div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>오늘의 운동 목록</h2><span class="count" id="totalCount">0개 운동</span></div>
+    <form class="add-row" id="addForm">
+      <input id="exerciseInput" maxlength="40" placeholder="예: 스쿼트 20회" aria-label="추가할 운동 이름" autocomplete="off">
+      <button class="add-btn" type="submit">＋ 추가</button>
+    </form>
+    <div class="quick" aria-label="추천 운동 빠른 추가">
+      <button class="chip" type="button" data-name="걷기 30분">＋ 걷기 30분</button>
+      <button class="chip" type="button" data-name="스쿼트 20회">＋ 스쿼트 20회</button>
+      <button class="chip" type="button" data-name="플랭크 1분">＋ 플랭크 1분</button>
+      <button class="chip" type="button" data-name="스트레칭 10분">＋ 스트레칭 10분</button>
+    </div>
+    <div class="list" id="exerciseList"></div>
+    <div class="footer"><span>체크한 운동은 이 기기에 자동 저장돼요.</span><button class="reset" id="clearDone" type="button">완료 항목 지우기</button></div>
+  </section>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const today = new Date();
+const dateKey = [today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');
+$('#todayDate').textContent = new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(today);
+const storageKey = 'fitday-exercises-' + dateKey;
+let exercises = [];
+try { exercises = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch(e) { exercises = []; }
+if (!Array.isArray(exercises)) exercises = [];
+function save(){ localStorage.setItem(storageKey,JSON.stringify(exercises)); render(); }
+function addExercise(name){
+  const clean = name.trim();
+  if(!clean) return;
+  if(exercises.some(x=>x.name.toLowerCase()===clean.toLowerCase())) { $('#exerciseInput').value=''; $('#exerciseInput').placeholder='이미 목록에 있는 운동이에요'; return; }
+  exercises.push({id:Date.now()+Math.random(),name:clean,done:false});
+  $('#exerciseInput').value=''; save();
+}
+function render(){
+  const total=exercises.length, done=exercises.filter(x=>x.done).length, pct=total?Math.round(done/total*100):0;
+  $('#progressText').textContent=`${done} / ${total}`;
+  $('#progressCaption').textContent=total?(pct===100?'오늘의 운동을 모두 완료했어요!':`목표까지 ${total-done}개 남았어요`):'운동을 추가해 시작해 보세요';
+  $('#doneCount').textContent=done+'개'; $('#totalCount').textContent=total+'개 운동';
+  $('#percent').textContent=pct+'%'; $('#progressRing').style.setProperty('--p',pct);
+  const list=$('#exerciseList'); list.innerHTML='';
+  if(!total){list.innerHTML='<div class="empty"><b>🏃</b>아직 등록된 운동이 없어요.<br>위 입력창이나 추천 운동으로 오늘의 계획을 추가해 보세요.</div>';return;}
+  exercises.forEach(ex=>{
+    const row=document.createElement('div'); row.className='item'+(ex.done?' done':'');
+    const check=document.createElement('input'); check.type='checkbox'; check.className='check'; check.checked=!!ex.done; check.setAttribute('aria-label',ex.name+' 완료');
+    check.addEventListener('change',()=>{ex.done=check.checked;save();});
+    const name=document.createElement('span'); name.className='item-name'; name.textContent=ex.name;
+    const tag=document.createElement('span'); tag.className='tag'; tag.textContent=ex.done?'완료':'예정';
+    const del=document.createElement('button'); del.className='delete'; del.type='button'; del.textContent='×'; del.setAttribute('aria-label',ex.name+' 삭제');
+    del.addEventListener('click',()=>{exercises=exercises.filter(x=>x.id!==ex.id);save();});
+    row.append(check,name,tag,del); list.append(row);
+  });
+}
+$('#addForm').addEventListener('submit',e=>{e.preventDefault();addExercise($('#exerciseInput').value);});
+document.querySelectorAll('.chip').forEach(btn=>btn.addEventListener('click',()=>addExercise(btn.dataset.name)));
+$('#clearDone').addEventListener('click',()=>{exercises=exercises.filter(x=>!x.done);save();});
+render();
+</script>
+</body>
+</html>
